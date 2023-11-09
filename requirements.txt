@@ -1,0 +1,11 @@
+datasets
+openai==0.28
+transformers
+tokenizers
+protobuf
+torch 
+torchvision 
+torchaudio
+sentencepiece
+evaluate
+scikit-learn
