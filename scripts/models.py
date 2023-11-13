@@ -2,7 +2,6 @@ from transformers import AutoTokenizer, AutoModelForCausalLM
 import openai
 from openai import OpenAI
 import torch
-import black
 
 # =====================
 # Base Classes
