@@ -7,6 +7,7 @@ class TemplateProcessor:
         self.template_path = template_path
         self.template_data = self.load()
         self.template_string = self.template_data.get("template", "")
+        self.reference_string = self.template_data.get("reference", "")
 
     def load(self):
         """Loads the template file."""
@@ -26,6 +27,16 @@ class TemplateProcessor:
         except IndexError as e:
             raise IndexError(f"Index error in template formatting: {e}")
     
+    def process_reference(self, data):
+        """Creates a reference using the loaded template and provided data."""
+        try:
+            reference = self.template_string.format(**data)
+            return reference
+        except KeyError as e:
+            raise KeyError(f"Missing key in dataset for template: {e}")
+        except IndexError as e:
+            raise IndexError(f"Index error in template formatting: {e}")
+
     def format_natural_language(self, model_output):
         formatted_output = re.sub(r"<outpuT>|```.*?```", "", model_output, flags=re.IGNORECASE | re.DOTALL) # Remove special token <outpuT> and code blocks
         return formatted_output.strip()

@@ -27,20 +27,28 @@ def debug_print(debug_mode, *messages):
     if debug_mode:
         print("🐥", *messages)
 
-def save_results(result_path, results):
+
+def save_results(result_path, results, record):
     """Save the evaluation results to a file."""
     with open(result_path, 'a', encoding='utf-8') as f:
         for result in results:
-            filtered_result = {}
+            filtered_result = record
             for k, v in result.items():
                 if 'id' in k:
                     filtered_result['id'] = v
-                elif 'score' in k:
+            filtered_result['model_input'] = result.get('model_input', '')
+            filtered_result['model_output'] = result.get('model_output', '')
+            filtered_result['formatted_output'] = result.get('formatted_output', '')
+            for k, v in result.items():
+                if 'score' in k:
                     filtered_result[k] = v
-            for key in ['model_input', 'model_output', 'formatted_output']:
-                if key in result: 
-                    filtered_result[key] = result[key]
             f.write(json.dumps(filtered_result, ensure_ascii=False) + '\n')
+                    
+            filtered_result = {
+                key: value for key, value in result.items()
+                if key in ['id', 'score'] or key in ['model_input', 'model_output', 'formatted_output']
+            }
+
 
 
 def main():
@@ -51,20 +59,22 @@ def main():
     template = load_template(args.template_path)
     evaluator = load_evaluator(args.metric_path, args.metric_args)
 
-    debug_print(args.debug_mode, "Model loaded:", model)
-    debug_print(args.debug_mode, "Dataset loaded:", len(dataset), "entries")
-    debug_print(args.debug_mode, "Template loaded:", template)
-    debug_print(args.debug_mode, "Evaluator loaded:", evaluator)
+    debug_print(args.debug_mode, "Model loaded:\n", model)
+    debug_print(args.debug_mode, "Dataset loaded:\n", len(dataset), "entries")
+    debug_print(args.debug_mode, "Template loaded:\n", template)
+    debug_print(args.debug_mode, "Evaluator loaded:\n", evaluator)
 
     for data in dataset:
         prompt = template.process(data)
+        data['reference'] = template.process_reference(data)
         data['model_input'] = prompt
         data['model_output'] = model.generate(prompt)
         data['formatted_output'] = template.collate(data['model_output'])
 
-        debug_print(args.debug_mode, "Input:", data['model_input'])
-        debug_print(args.debug_mode, "Output:", data['model_output'])
-        debug_print(args.debug_mode, "Formatted:", data['formatted_output'])
+        debug_print(args.debug_mode, "Reference:\n", data['reference'])
+        debug_print(args.debug_mode, "Input:\n", data['model_input'])
+        debug_print(args.debug_mode, "Output:\n", data['model_output'])
+        debug_print(args.debug_mode, "Formatted:\n", data['formatted_output'])
 
     if evaluator:
         record = {
@@ -75,9 +85,9 @@ def main():
         }
         
         score, dataset = evaluator.calculate(dataset, record)
-        print("score:", score)
+        print("score:\n", score)
 
-    save_results(args.result_path, dataset)
+    save_results(args.result_path, dataset, record)
 
 
 if __name__ == '__main__':
