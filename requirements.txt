@@ -1,5 +1,5 @@
 datasets
-openai==0.28
+openai
 transformers
 tokenizers
 protobuf
