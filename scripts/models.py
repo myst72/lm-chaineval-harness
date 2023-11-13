@@ -1,6 +1,8 @@
 from transformers import AutoTokenizer, AutoModelForCausalLM
 import openai
+from openai import OpenAI
 import torch
+import black
 
 # =====================
 # Base Classes
@@ -107,13 +109,16 @@ class OpenAIModel(Model):
         self.model_args = combined_args
 
     def generate(self, prompt: str) -> str:
-        openai.api_key = self.openai_api_key
-        response = openai.ChatCompletion.create(
-            model=self.model_name,
+        client = OpenAI(api_key=self.openai_api_key)
+        
+        response = client.chat.completions.create(
+             model=self.model_name,
             messages=[{"role": "user", "content": prompt}],
             **self.model_args
         )
-        return response.choices[0]["message"]["content"].strip()
+        prompt_and_response = prompt + "\n" + response.choices[0].message.content
+
+        return prompt_and_response
 
 class OpenAIModelLoader(ModelLoader):
     def __init__(self, openai_api_key, model_name, model_args=None):
