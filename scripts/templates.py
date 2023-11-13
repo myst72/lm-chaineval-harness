@@ -30,12 +30,12 @@ class TemplateProcessor:
     def process_reference(self, data):
         """Creates a reference using the loaded template and provided data."""
         try:
-            reference = self.template_string.format(**data)
+            reference = self.reference_string.format(**data)
             return reference
         except KeyError as e:
-            raise KeyError(f"Missing key in dataset for template: {e}")
+            raise KeyError(f"Missing key in dataset for reference: {e}")
         except IndexError as e:
-            raise IndexError(f"Index error in template formatting: {e}")
+            raise IndexError(f"Index error in reference formatting: {e}")
 
     def format_natural_language(self, model_output):
         formatted_output = re.sub(r"<outpuT>|```.*?```", "", model_output, flags=re.IGNORECASE | re.DOTALL) # Remove special token <outpuT> and code blocks
