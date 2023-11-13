@@ -54,7 +54,7 @@ class CodeEvalEvaluator(Evaluator):
         # データセット内の各データに対してcode_evalを実行
         for data in dataset:
             # テストケースと候補のコードを取得
-            test_cases = [data['test']]
+            test_cases = [data['reference']]
             candidates = [[data['formatted_output']]]
 
             if candidates != [['']]:
@@ -78,7 +78,7 @@ class AccuracyEvaluator(Evaluator):
     def calculate(self, dataset, record):
         
         # 正解データと予測データのリストを準備
-        references = [d['result'] for d in dataset]
+        references = [d['reference'] for d in dataset]
         candidates = [d['model_output'] for d in dataset]
         # accuracy スコアを計算
         score = self.metric.compute(predictions=candidates, references=references)['accuracy']
@@ -93,7 +93,7 @@ class BLEUEvaluator(Evaluator):
     def calculate(self, dataset, record):
 
         # BLEUメトリック用のデータ準備
-        references = [[d['result'].split()] for d in dataset]  # リストのリストとして分割された参照文
+        references = [[d['reference'].split()] for d in dataset]  # リストのリストとして分割された参照文
         candidates = [d['model_output'].split() for d in dataset]  # 分割された予測文のリスト
         # BLEU スコアを計算
         score = self.metric.compute(predictions=candidates, references=references)['bleu']
@@ -108,7 +108,7 @@ class F1Evaluator(Evaluator):
     def calculate(self, dataset, record):
         
         # F1スコアの計算に必要な正解ラベルと予測ラベルのリストを準備
-        references = [d['result'] for d in dataset]
+        references = [d['reference'] for d in dataset]
         candidates = [d['model_output'] for d in dataset]
         # F1スコアを計算
         score = self.metric.compute(predictions=candidates, references=references)["f1"]
