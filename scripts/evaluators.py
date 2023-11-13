@@ -30,7 +30,10 @@ class TestEvaluator(Evaluator):
     def calculate(self, dataset, record):
         # データセット内のすべてのoutputの長さの平均を計算してスコアとする
         total_length = sum(len(data['formatted_output']) for data in dataset)
-        return total_length / len(dataset) if dataset else 0
+        result_score = total_length / len(dataset) if dataset else 0
+        for data in dataset:
+            data['test_result_score'] = result_score
+        return result_score, dataset
 
 
 # =====================
@@ -48,36 +51,75 @@ class CodeEvalEvaluator(Evaluator):
 
         os.environ["HF_ALLOW_CODE_EVAL"] = "1"
 
-        pass_at_k_scores = []
-
         # データセット内の各データに対してcode_evalを実行
         for data in dataset:
             # テストケースと候補のコードを取得
             test_cases = [data['test']]
             candidates = [[data['formatted_output']]]
 
-            # code_evalメトリックを計算
-            try:
+            if candidates != [['']]:
                 pass_at_k, results = code_eval_metric.compute(references=test_cases, predictions=candidates, k=[1])
-                pass_at_k_scores.append(pass_at_k['pass@1']) # k=1 のスコアをリストに追加
-            except Exception as e:
-                print(f"Error evaluating code: {e}")
-                pass_at_k_scores.append(0)  # エラーが発生した場合は0を追加
+                data['item_pass@1_score'] = pass_at_k['pass@1'] # k=1 のスコアをリストに追加
+            else:
+                data['item_pass@1_score'] = 0.0
 
-        # pass_at_kの平均値を最終スコアとする
-        average_pass_at_k = sum(pass_at_k_scores) / len(pass_at_k_scores) if pass_at_k_scores else 0
-        return average_pass_at_k
+        # 各要素からitem_scoreを取り出して平均を算出
+        item_scores = [data['item_pass@1_score'] for data in dataset]
+        average_pass_at_k = sum(item_scores) / len(item_scores) if item_scores else 0
+        
+        for data in dataset:
+            data['all_pass@1_score'] = average_pass_at_k
 
+        return average_pass_at_k, dataset
 
 
 class AccuracyEvaluator(Evaluator):
     # 正確性評価用のEvaluatorクラスの実装は省略
-    pass
+    def calculate(self, dataset, record):
+        
+        # 正解データと予測データのリストを準備
+        references = [d['result'] for d in dataset]
+        candidates = [d['model_output'] for d in dataset]
+        # accuracy スコアを計算
+        score = self.metric.compute(predictions=candidates, references=references)['accuracy']
+
+        for data in dataset:
+            data['accuracy_score'] = score
+ 
+        return score, dataset
 
 
 class BLEUEvaluator(Evaluator):
-    # BLEUスコア評価用のEvaluatorクラスの実装は省略
-    pass
+    def calculate(self, dataset, record):
+
+        # BLEUメトリック用のデータ準備
+        references = [[d['result'].split()] for d in dataset]  # リストのリストとして分割された参照文
+        candidates = [d['model_output'].split() for d in dataset]  # 分割された予測文のリスト
+        # BLEU スコアを計算
+        score = self.metric.compute(predictions=candidates, references=references)['bleu']
+
+        for data in dataset:
+            data['bleu_score'] = score
+ 
+        return score, dataset
+
+
+class F1Evaluator(Evaluator):
+    def calculate(self, dataset, record):
+        
+        # F1スコアの計算に必要な正解ラベルと予測ラベルのリストを準備
+        references = [d['result'] for d in dataset]
+        candidates = [d['model_output'] for d in dataset]
+        # F1スコアを計算
+        score = self.metric.compute(predictions=candidates, references=references)["f1"]
+        # `score` には通常、precision, recall, f1 のキーが含まれている
+        #f1_score = score['f1']
+        #score = f1_score
+
+        for data in dataset:
+            data['f1_score'] = score
+ 
+        return score, dataset
 
 
 # =====================
@@ -99,6 +141,8 @@ class EvaluatorLoaderFactory:
             return AccuracyEvaluator(metric_args)
         elif metric_path == "BLEU":
             return BLEUEvaluator(metric_args)
+        elif metric_path == "F1":
+            return F1Evaluator(metric_args)
         else:
             raise ValueError(f"Unknown metric path: {metric_path}")
 
