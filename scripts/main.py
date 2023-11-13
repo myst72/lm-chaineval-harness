@@ -27,19 +27,20 @@ def debug_print(debug_mode, *messages):
     if debug_mode:
         print("🐥", *messages)
 
-
 def save_results(result_path, results):
     """Save the evaluation results to a file."""
     with open(result_path, 'a', encoding='utf-8') as f:
         for result in results:
             filtered_result = {}
             for k, v in result.items():
-                if k in ['model_input', 'model_output', 'formatted_output']:
-                    filtered_result[k] = v
-                elif 'id' in k:
+                if 'id' in k:
                     filtered_result['id'] = v
+                elif 'score' in k:
+                    filtered_result[k] = v
+            for key in ['model_input', 'model_output', 'formatted_output']:
+                if key in result: 
+                    filtered_result[key] = result[key]
             f.write(json.dumps(filtered_result, ensure_ascii=False) + '\n')
-
 
 
 def main():
@@ -73,7 +74,7 @@ def main():
             'metrics': args.metric_path,
         }
         
-        score = evaluator.calculate(dataset, record)
+        score, dataset = evaluator.calculate(dataset, record)
         print("score:", score)
 
     save_results(args.result_path, dataset)
