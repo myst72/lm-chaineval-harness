@@ -69,7 +69,7 @@ def main():
         data['reference'] = template.process_reference(data)
         data['model_input'] = prompt
         data['model_output'] = model.generate(prompt)
-        data['formatted_output'] = template.collate(data['model_output'])
+        data['formatted_output'] = template.collate(prompt, data['model_output'])
 
         debug_print(args.debug_mode, "Reference:\n", data['reference'])
         debug_print(args.debug_mode, "Input:\n", data['model_input'])
