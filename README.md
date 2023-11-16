@@ -49,7 +49,7 @@ HF_TOKEN=HF_TOKEN
     - `DATASET_PATH` : HuggingFace Hub上で提供されているパス名を指定
         - 個人がローカルに所有するjsonl形式データを指定することも可能
     - `TEMPLATE_PATH` : [`templates`](https://github.com/KuramitsuLab/lm-chaineval-harness/tree/main/templates) から選んだテンプレートのパス名
-        - 個人であたらに作成したテンプレートのパス名の指定も可能
+        - 個人で新たに作成したテンプレートのパス名の指定も可能
     - `METRIC_PATH` : 評価指標のパス名 
         - [HuggingFaceのevaluate-metric](https://huggingface.co/evaluate-metric)で提供されているパス名で指定する (e.g., pass@k: `code_eval`)
 
