@@ -9,15 +9,15 @@ from evaluators import load_evaluator
 def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('--model_path', type=str, required=True, help='Path to the model file')
-    parser.add_argument('--model_args', type=json.loads, help='Model arguments in JSON format')
-    parser.add_argument('--openai_api_key', type=str, help='OpenAI API token')
-    parser.add_argument('--hf_token', type=str, help='HuggingFace API token')
+    parser.add_argument('--model_args', type=json.loads, default=None, help='Model arguments in JSON format')
+    parser.add_argument('--openai_api_key', type=str, default=None, help='OpenAI API token')
+    parser.add_argument('--hf_token', type=str, default=None, help='HuggingFace API token')
     parser.add_argument('--dataset_path', type=str, required=True, help='Path to the dataset file')
-    parser.add_argument('--dataset_args', type=json.loads, help='Dataset arguments in JSON format')
+    parser.add_argument('--dataset_args', type=json.loads, default=None, help='Dataset arguments in JSON format')
     parser.add_argument('--template_path', type=str, required=True, help='Path to the template file')
-    parser.add_argument('--metric_path', type=str, required=True, help='Path to the metric file')
-    parser.add_argument('--metric_args', type=json.loads, help='Metric arguments in JSON format')
-    parser.add_argument('--result_path', type=str, required=True, help='Path to the result file')
+    parser.add_argument('--metric_path', type=str, default=False, help='Path to the metric file')
+    parser.add_argument('--metric_args', type=json.loads, default=None, help='Metric arguments in JSON format')
+    parser.add_argument('--result_path', type=str, default='./result.jsonl', help='Path to the result file')
     parser.add_argument('--debug_mode', action='store_true', help='Enable debug mode for verbose output')
     return parser.parse_args()
 
@@ -71,19 +71,24 @@ def main():
         data['model_output'] = model.generate(prompt)
         data['formatted_output'] = template.collate(prompt, data['model_output'])
 
-        debug_print(args.debug_mode, "Reference:\n", data['reference'])
+        # debug_print(args.debug_mode, "Reference:\n", data['reference'])
         debug_print(args.debug_mode, "Input:\n", data['model_input'])
         debug_print(args.debug_mode, "Output:\n", data['model_output'])
         debug_print(args.debug_mode, "Formatted:\n", data['formatted_output'])
-
+    
+    # if evaluator:
+    #     record = {
+    #         'model': args.model_path,
+    #         'dataset': args.dataset_path,
+    #         'template': args.template_path,
+    #         'metrics': args.metric_path,
+    #     }
+    record = {}
     if evaluator:
-        record = {
-            'model': args.model_path,
-            'dataset': args.dataset_path,
-            'template': args.template_path,
-            'metrics': args.metric_path,
-        }
-        
+        record['model'] = args.model_path,
+        record['dataset'] = args.model_path,
+        record['template'] = args.model_path,
+        record['metrics'] = args.model_path,
         score, dataset = evaluator.calculate(dataset, record)
         print("score:\n", score)
 

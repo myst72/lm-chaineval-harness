@@ -70,9 +70,9 @@ class TemplateProcessor:
             format_output = format_output[start_index:].strip() # '<outpuT>'以降を返す
 
         #プロンプトと重複行抽出
-        promptlines = prompt.split('\n')
+        promptlines = [line.strip() for line in prompt.split('\n')]
         format_outputlines = format_output.split('\n')
-        format_output = [line for line in format_outputlines if line not in promptlines]
+        format_output = [line for line in format_outputlines if line.strip() not in promptlines]
         format_output = '\n'.join(format_output)
         return format_output
         
@@ -94,10 +94,10 @@ class TemplateProcessor:
         """Collates the model output according to the specified output language in the template data."""
         output_lang = self.template_data.get('output_lang', 'NL')
 
-        if output_lang in ['NL', 'en', 'jp']: # Format for natural language
+        if output_lang in ['NL', 'en', 'ja', 'ko', 'zh']: # Format for natural language
             return self.format_natural_language(model_output, prompt)
 
-        elif output_lang in ['PL', 'py']: # Format for programming language
+        elif output_lang in ['PL', 'py', 'cpp', 'js', 'ru']: # Format for programming language
             return self.format_programming_language(model_output)
 
         else:

@@ -1,0 +1,6 @@
+{
+    "template": "Create a Japanese summary statement for this Python code, including function names.\nProvide only sentence enclosed in \"\"\" and \"\"\".\nPython:\n```\n{code}\n```\n",
+    "input_lang": "py",
+    "output_lang": "ja",
+    "reference": "{testcode}"
+}

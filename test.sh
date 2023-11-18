@@ -10,7 +10,7 @@ python3 ./scripts/main.py \
     --dataset_path ./datasets/ex_humaneval.jsonl \
     --template_path ./templates/humaneval_template.json \
     --metric_path test \
-    --result_path result1.jsonl \
+    --result_path results/result1.jsonl \
     --debug_mode
 
 # test2
@@ -22,7 +22,7 @@ python3 ./scripts/main.py \
     --dataset_args '{"num":1}' \
     --template_path ./templates/humaneval_template.json \
     --metric_path test \
-    --result_path result2.jsonl \
+    --result_path results/result2.jsonl \
     --debug_mode
 
 # test3
@@ -35,5 +35,23 @@ python3 ./scripts/main.py \
     --dataset_args '{"subset": "JCommonsenseQA", "split": "validation"}' \
     --template_path ./templates/jglue_template.json \
     --metric_path test \
-    --result_path result3.jsonl \
+    --result_path results/result3.jsonl \
+    --debug_mode
+
+# test4
+python3 ./scripts/main.py \
+    --model_path gpt-3.5-turbo \
+    --openai_api_key $OPENAI_API_KEY \
+    --dataset_path datasets/myhumaneval.jsonl \
+    --template_path ./templates/bt_py2ja.json \
+    --result_path results/result41.jsonl \
+    --debug_mode
+
+python3 ./scripts/main.py \
+    --model_path gpt-3.5-turbo \
+    --openai_api_key $OPENAI_API_KEY \
+    --dataset_path result41.jsonl \
+    --template_path ./templates/bt_ja2py.json \
+    --metric_path test \
+    --result_path results/result42.jsonl \
     --debug_mode

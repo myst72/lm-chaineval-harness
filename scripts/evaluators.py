@@ -153,4 +153,7 @@ class EvaluatorLoaderFactory:
 # =====================
 
 def load_evaluator(metric_path, metric_args):
-    return EvaluatorLoaderFactory.create(metric_path, metric_args)
+    if metric_path:
+        return EvaluatorLoaderFactory.create(metric_path, metric_args)
+    else:
+        return False
