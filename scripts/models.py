@@ -49,7 +49,9 @@ class HFModel(Model):
             "temperature": 0.2,
             "return_full_text": False,
         }
-        combined_args = {**default_args, **(model_args or {})}
+        if "max_new_tokens" in model_args:
+            default_args.pop("max_length", None)
+        updated_args = default_args.update(model_args)
 
         # super().__init__()
         # Initialize the tokenizer
@@ -74,7 +76,7 @@ class HFModel(Model):
         # self.model.to(self.device)
         # ----------------------------------
 
-        self.model_args = combined_args
+        self.model_args = updated_args
 
         if quantize:
             bnb_config = BitsAndBytesConfig(
@@ -132,12 +134,12 @@ class OpenAIModel(Model):
             "max_tokens": 512, 
             "n": 1}
         # Override defaults with any user-provided arguments
-        combined_args = {**default_args, **(model_args or {})}
+        updated_args = default_args.update(model_args)
 
         super().__init__()
         self.openai_api_key = openai_api_key
         self.model_name = model_name
-        self.model_args = combined_args
+        self.model_args = updated_args
 
     def generate(self, prompt: str) -> str:
         client = OpenAI(api_key=self.openai_api_key)
