@@ -9,3 +9,5 @@ torchaudio
 sentencepiece
 evaluate
 scikit-learn
+accelerate
+bitsandbytes

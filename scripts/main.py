@@ -18,6 +18,7 @@ def parse_args():
     parser.add_argument('--metric_path', type=str, default=False, help='Path to the metric file')
     parser.add_argument('--metric_args', type=json.loads, default=None, help='Metric arguments in JSON format')
     parser.add_argument('--result_path', type=str, default='./result.jsonl', help='Path to the result file')
+    parser.add_argument('--no_quantize_model', action='store_false', help='Disable model quantization with bitsandbytes')
     parser.add_argument('--debug_mode', action='store_true', help='Enable debug mode for verbose output')
     return parser.parse_args()
 
@@ -53,8 +54,9 @@ def save_results(result_path, results, record):
 
 def main():
     args = parse_args()
+    quantize = not args.no_quantize_model
 
-    model = load_model(args.model_path, args.openai_api_key, args.hf_token, args.model_args)
+    model = load_model(args.model_path, args.openai_api_key, args.hf_token, args.model_args, quantize)
     dataset = load_testdata(args.dataset_path, args.dataset_args)
     template = load_template(args.template_path)
     evaluator = load_evaluator(args.metric_path, args.metric_args)

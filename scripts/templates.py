@@ -111,8 +111,8 @@ class TemplateProcessor:
     ## humanevalの整形処理
     def format_humaneval(self, prompt, model_output):
         """Collates the model output for the humaneval format."""
-        if not model_output.startswith("    "):
-            model_output = "    " + model_output
+        # if not model_output.startswith("    "):
+        #     model_output = "    " + model_output
         combined_output = prompt + "\n" + model_output + "\n"
         return self.extract_functions(combined_output)
 

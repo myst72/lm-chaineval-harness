@@ -1,4 +1,4 @@
-from transformers import AutoTokenizer, AutoModelForCausalLM, pipeline
+from transformers import AutoTokenizer, AutoModelForCausalLM, pipeline, BitsAndBytesConfig
 import openai
 from openai import OpenAI
 import torch
@@ -41,7 +41,7 @@ class TestModelLoader(ModelLoader):
 # =====================
 
 class HFModel(Model):
-    def __init__(self, model_name, hf_token=None, model_args=None):
+    def __init__(self, model_name, hf_token=None, model_args=None, quantize=True):
         default_args = {
             "max_length": 512,
             "do_sample": True,
@@ -76,6 +76,21 @@ class HFModel(Model):
 
         self.model_args = combined_args
 
+        if quantize:
+            bnb_config = BitsAndBytesConfig(
+                load_in_4bit=True,
+                bnb_4bit_use_double_quant=True,
+                bnb_4bit_quant_type="nf4",
+                bnb_4bit_compute_dtype=torch.bfloat16
+            )
+            self.model = AutoModelForCausalLM.from_pretrained(
+                model_name, quantization_config=bnb_config, device_map="auto", use_auth_token=hf_token if hf_token else None
+            )
+        else:
+            self.model = AutoModelForCausalLM.from_pretrained(
+                model_name, use_auth_token=hf_token if hf_token else None, device_map="auto"
+            )
+
         self.generator = pipeline(
             "text-generation",
             model=model_name,
@@ -95,12 +110,13 @@ class HFModel(Model):
         return generated_texts[0]['generated_text']
 
 class HFModelLoader(ModelLoader):
-    def __init__(self, model_name, hf_token=None, model_args=None):
+    def __init__(self, model_name, hf_token=None, model_args=None, quantize=True):
         super().__init__(model_name, model_args)
         self.hf_token = hf_token
+        self.quantize = quantize
 
     def load(self) -> HFModel:
-        return HFModel(self.model_name, self.hf_token, self.model_args)
+        return HFModel(self.model_name, self.hf_token, self.model_args, self.quantize)
 
 
 # =====================
@@ -150,14 +166,14 @@ class OpenAIModelLoader(ModelLoader):
 
 class ModelLoaderFactory:
     @staticmethod
-    def create(model_name, openai_api_key=None, hf_token=None, model_args=None):
+    def create(model_name, openai_api_key=None, hf_token=None, model_args=None, quantize=True):
         try:
             if model_name == "test":
                 return TestModelLoader(model_name, model_args)
             elif model_name.startswith("gpt"):
                 return OpenAIModelLoader(openai_api_key, model_name, model_args)
             else:
-                return HFModelLoader(model_name, hf_token, model_args)
+                return HFModelLoader(model_name, hf_token, model_args, quantize)
         except Exception as e:
             print(f"Failed to load the model. Error message: {e}")
             raise e
@@ -168,7 +184,7 @@ class ModelLoaderFactory:
 # Utility Function
 # =====================
 
-def load_model(model_path, openai_api_key, hf_token, model_args):
-    model_loader = ModelLoaderFactory.create(model_path, openai_api_key, hf_token, model_args)
+def load_model(model_path, openai_api_key, hf_token, model_args, quantize):
+    model_loader = ModelLoaderFactory.create(model_path, openai_api_key, hf_token, model_args, quantize)
     model = model_loader.load()
     return model
