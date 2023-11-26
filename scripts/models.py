@@ -1,4 +1,4 @@
-from transformers import AutoTokenizer, AutoModelForCausalLM
+from transformers import AutoTokenizer, AutoModelForCausalLM, pipeline
 import openai
 from openai import OpenAI
 import torch
@@ -46,11 +46,12 @@ class HFModel(Model):
             "max_length": 512,
             "do_sample": True,
             "top_p": 0.95,
-            "temperature": 0.2
+            "temperature": 0.2,
+            "return_full_text": False,
         }
         combined_args = {**default_args, **(model_args or {})}
 
-        super().__init__()
+        # super().__init__()
         # Initialize the tokenizer
         self.tokenizer = AutoTokenizer.from_pretrained(
             model_name, 
@@ -58,25 +59,40 @@ class HFModel(Model):
             trust_remote_code=True, 
             padding_side='left'
         )
+        self.tokenizer.pad_token = self.tokenizer.eos_token
         
-        # Initialize the model
-        self.model = AutoModelForCausalLM.from_pretrained(
-            model_name, 
-            use_auth_token=hf_token if hf_token else None,
-            trust_remote_code=True
-        )
+        # pipelineなしで実装----------------------------------
+        # # Initialize the model
+        # self.model = AutoModelForCausalLM.from_pretrained(
+        #     model_name, 
+        #     use_auth_token=hf_token if hf_token else None,
+        #     trust_remote_code=True
+        # )
 
-        # Set the device to GPU if available
-        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        self.model.to(self.device)
+        # # Set the device to GPU if available
+        # self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        # self.model.to(self.device)
+        # ----------------------------------
 
         self.model_args = combined_args
+
+        self.generator = pipeline(
+            "text-generation",
+            model=model_name,
+            tokenizer=self.tokenizer,
+            device=0 if torch.cuda.is_available() else -1,
+            # use_auth_token=hf_token if hf_token else None,
+            **self.model_args
+        )
     
     def generate(self, prompt: str) -> str:
-        input_ids = self.tokenizer.encode(prompt, return_tensors="pt").to(self.device)
-        generated_ids = self.model.generate(input_ids, **self.model_args)
-        return self.tokenizer.decode(generated_ids[0], skip_special_tokens=True)
-
+        # pipelineなしで実装----------------------------------
+        # input_ids = self.tokenizer.encode(prompt, return_tensors="pt").to(self.device)
+        # generated_ids = self.model.generate(input_ids, **self.model_args)
+        # return self.tokenizer.decode(generated_ids[0], skip_special_tokens=True)
+        # ----------------------------------
+        generated_texts = self.generator(prompt, **self.model_args)
+        return generated_texts[0]['generated_text']
 
 class HFModelLoader(ModelLoader):
     def __init__(self, model_name, hf_token=None, model_args=None):
@@ -111,13 +127,12 @@ class OpenAIModel(Model):
         client = OpenAI(api_key=self.openai_api_key)
         
         response = client.chat.completions.create(
-             model=self.model_name,
+            model=self.model_name,
             messages=[{"role": "user", "content": prompt}],
             **self.model_args
         )
-        prompt_and_response = prompt + "\n" + response.choices[0].message.content
-
-        return prompt_and_response
+        # prompt_and_response = prompt + "\n" + response.choices[0].message.content
+        return response.choices[0].message.content
 
 class OpenAIModelLoader(ModelLoader):
     def __init__(self, openai_api_key, model_name, model_args=None):
