@@ -97,3 +97,25 @@ HF_TOKEN=HF_TOKEN
         --metric_path $METRIC_PATH \
         --result_path result.jsonl \
     ```
+
+## その他のオプション
+
+### 量子化の無効化
+
+デフォルト設定で、[bitsandbytes](https://github.com/TimDettmers/bitsandbytes) を使用した4bitでの量子化を行なっています。  
+量子化を無効化する際には、コマンドライン引数として `no_quantize_model` を追加してください。
+
+```sh
+MODEL_PATH="MODEL_PATH"
+DATASET_PATH="DATASET_PATH"
+TEMPLATE_PATH="TEMPLATE_PATH"
+METRIC_PATH="METRIC_PATH"
+
+python3 ./scripts/main.py \
+    --model_path $MODEL_PATH \
+    --dataset_path $DATASET_PATH \
+    --template_path $TEMPLATE_PATH \
+    --metric_path $METRIC_PATH \
+    --result_path result.jsonl \
+    --no_quantize_model
+``````
