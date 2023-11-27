@@ -112,7 +112,7 @@ class HFModel(Model):
         # generated_ids = self.model.generate(input_ids, **self.model_args)
         # return self.tokenizer.decode(generated_ids[0], skip_special_tokens=True)
         # ----------------------------------
-        generated_texts = self.generator(prompt, **self.model_args)
+        generated_texts = self.generator(prompt, **self.model_args, pad_token_id=self.generator.tokenizer.eos_token_id)
         return generated_texts[0]['generated_text']
 
 class HFModelLoader(ModelLoader):

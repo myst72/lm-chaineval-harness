@@ -88,9 +88,9 @@ def main():
     record = {}
     if evaluator:
         record['model'] = args.model_path,
-        record['dataset'] = args.model_path,
-        record['template'] = args.model_path,
-        record['metrics'] = args.model_path,
+        record['dataset'] = args.dataset_path,
+        record['template'] = args.template_path,
+        record['metrics'] = args.metric_path,
         score, dataset = evaluator.calculate(dataset, record)
         print("score:\n", score)
 
