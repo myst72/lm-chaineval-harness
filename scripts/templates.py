@@ -102,11 +102,18 @@ class TemplateProcessor:
         return extracted_text
 
     def extract_functions(self, code:str):
-        """Extracts functions from a code string."""
+        # """Extracts functions from a code string."""
+        # pattern_function = r"(def\b.*?)(?=\n\s*def\b|\n\s*$)"
+        # functions = re.findall(pattern_function, code, re.DOTALL)
+        # filtered_functions = [func for func in functions if 'return' in func]
+        # return '\n'.join(filtered_functions).strip()
+        codelines = code.split('\n')
+        import_sentenses = [c for c in codelines if c.startswith('from') or c.startswith('import')]
+
         pattern_function = r"(def\b.*?)(?=\n\s*def\b|\n\s*$)"
         functions = re.findall(pattern_function, code, re.DOTALL)
         filtered_functions = [func for func in functions if 'return' in func]
-        return '\n'.join(filtered_functions).strip()
+        return '\n'.join(import_sentenses).strip() + '\n\n' +'\n'.join(filtered_functions).strip()
     
     ## humanevalの整形処理
     def format_humaneval(self, prompt, model_output):
