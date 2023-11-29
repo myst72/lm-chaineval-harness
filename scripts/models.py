@@ -101,8 +101,8 @@ class HFModel(Model):
             "text-generation",
             model=model_name,
             tokenizer=self.tokenizer,
-            device=0 if torch.cuda.is_available() else -1,
-            # use_auth_token=hf_token if hf_token else None,
+            # device=0 if torch.cuda.is_available() else -1,
+            use_auth_token=hf_token if hf_token else None,
             **self.model_args
         )
     
