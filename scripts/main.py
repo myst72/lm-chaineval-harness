@@ -1,5 +1,6 @@
 import argparse
 import json
+from tqdm import tqdm
 from models import load_model
 from dataloaders import load_testdata
 from templates import load_template
@@ -29,9 +30,13 @@ def debug_print(debug_mode, *messages):
         print("🐥", *messages)
 
 
-def save_results(result_path, results, record):
+def save_results(result_path, results, record, final=False):
     """Save the evaluation results to a file."""
-    with open(result_path, 'a', encoding='utf-8') as f:
+
+    # 評価算出までした場合には全て上書きで保存をする
+    mode = 'w' if final else 'a'
+
+    with open(result_path, mode, encoding='utf-8') as f:
         for result in results:
             filtered_result = record
             for k, v in result.items():
@@ -57,16 +62,25 @@ def main():
     quantize = not args.no_quantize_model
 
     model = load_model(args.model_path, args.openai_api_key, args.hf_token, args.model_args, quantize)
-    dataset = load_testdata(args.dataset_path, args.dataset_args)
-    template = load_template(args.template_path)
-    evaluator = load_evaluator(args.metric_path, args.metric_args)
-
     debug_print(args.debug_mode, "Model loaded:\n", model)
+
+    dataset = load_testdata(args.dataset_path, args.dataset_args)
     debug_print(args.debug_mode, "Dataset loaded:\n", len(dataset), "entries")
+
+    template = load_template(args.template_path)
     debug_print(args.debug_mode, "Template loaded:\n", template)
+
+    evaluator = load_evaluator(args.metric_path, args.metric_args)
     debug_print(args.debug_mode, "Evaluator loaded:\n", evaluator)
 
-    for data in dataset:
+    record = {
+        'model': args.model_path,
+        'dataset': args.dataset_path,
+        'template': args.template_path,
+        'metrics': args.metric_path,
+    }
+
+    for data in tqdm(dataset):
         prompt = template.process(data)
         data['reference'] = template.process_reference(data)
         data['model_input'] = prompt
@@ -77,24 +91,14 @@ def main():
         debug_print(args.debug_mode, "Input:\n", data['model_input'])
         debug_print(args.debug_mode, "Output:\n", data['model_output'])
         debug_print(args.debug_mode, "Formatted:\n", data['formatted_output'])
+
+        save_results(args.result_path, [data], record)
     
-    # if evaluator:
-    #     record = {
-    #         'model': args.model_path,
-    #         'dataset': args.dataset_path,
-    #         'template': args.template_path,
-    #         'metrics': args.metric_path,
-    #     }
-    record = {}
-    if evaluator:
-        record['model'] = args.model_path,
-        record['dataset'] = args.dataset_path,
-        record['template'] = args.template_path,
-        record['metrics'] = args.metric_path,
+    if evaluator: 
         score, dataset = evaluator.calculate(dataset, record)
         print("score:\n", score)
 
-    save_results(args.result_path, dataset, record)
+    save_results(args.result_path, dataset, record, final=True)
 
 
 if __name__ == '__main__':

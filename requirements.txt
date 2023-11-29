@@ -11,3 +11,4 @@ evaluate
 scikit-learn
 accelerate
 bitsandbytes
+tqdm

@@ -79,6 +79,8 @@ class HFModel(Model):
 
         self.model_args = default_args
 
+        print("モデルを読み込むよ！")
+
         if quantize:
             bnb_config = BitsAndBytesConfig(
                 load_in_4bit=True,
@@ -105,6 +107,8 @@ class HFModel(Model):
             use_auth_token=hf_token if hf_token else None,
             **self.model_args
         )
+
+        print("モデルを読み込み終わったよ！")
     
     def generate(self, prompt: str) -> str:
         # pipelineなしで実装----------------------------------
