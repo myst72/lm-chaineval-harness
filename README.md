@@ -100,7 +100,7 @@ HF_TOKEN=HF_TOKEN
 
 ## その他のオプション
 
-### 量子化の無効化
+### 量子化の有効化
 
 [bitsandbytes](https://github.com/TimDettmers/bitsandbytes) を使用した4bitでの量子化を指定することができます。  
 量子化を行う際には、コマンドライン引数として `quantize_model` を追加してください。
