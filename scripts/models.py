@@ -41,7 +41,7 @@ class TestModelLoader(ModelLoader):
 # =====================
 
 class HFModel(Model):
-    def __init__(self, model_name, hf_token=None, model_args=None, quantize=True):
+    def __init__(self, model_name, hf_token=None, model_args=None, quantize=False):
         default_args = {
             "max_length": 512,
             "do_sample": True,

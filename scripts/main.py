@@ -11,6 +11,7 @@ def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('--model_path', type=str, required=True, help='Path to the model file')
     parser.add_argument('--model_args', type=json.loads, default=None, help='Model arguments in JSON format')
+    parser.add_argument('--quantize_model', action='store_true', help='Enable model quantization with bitsandbytes')
     parser.add_argument('--openai_api_key', type=str, default=None, help='OpenAI API token')
     parser.add_argument('--hf_token', type=str, default=None, help='HuggingFace API token')
     parser.add_argument('--dataset_path', type=str, required=True, help='Path to the dataset file')
@@ -19,7 +20,6 @@ def parse_args():
     parser.add_argument('--metric_path', type=str, default=False, help='Path to the metric file')
     parser.add_argument('--metric_args', type=json.loads, default=None, help='Metric arguments in JSON format')
     parser.add_argument('--result_path', type=str, default='./result.jsonl', help='Path to the result file')
-    parser.add_argument('--no_quantize_model', action='store_false', help='Disable model quantization with bitsandbytes')
     parser.add_argument('--debug_mode', action='store_true', help='Enable debug mode for verbose output')
     return parser.parse_args()
 
@@ -59,7 +59,9 @@ def save_results(result_path, results, record, final=False):
 
 def main():
     args = parse_args()
-    quantize = not args.no_quantize_model
+    
+    quantize = args.quantize_model
+    debug_print(args.debug_mode, "Quantization:\n", quantize)
 
     model = load_model(args.model_path, args.openai_api_key, args.hf_token, args.model_args, quantize)
     debug_print(args.debug_mode, "Model loaded:\n", model)
