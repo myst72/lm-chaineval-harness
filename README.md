@@ -102,8 +102,8 @@ HF_TOKEN=HF_TOKEN
 
 ### 量子化の無効化
 
-デフォルト設定で、[bitsandbytes](https://github.com/TimDettmers/bitsandbytes) を使用した4bitでの量子化を行なっています。  
-量子化を無効化する際には、コマンドライン引数として `no_quantize_model` を追加してください。
+[bitsandbytes](https://github.com/TimDettmers/bitsandbytes) を使用した4bitでの量子化を指定することができます。  
+量子化を行う際には、コマンドライン引数として `quantize_model` を追加してください。
 
 ```sh
 MODEL_PATH="MODEL_PATH"
@@ -117,5 +117,5 @@ python3 ./scripts/main.py \
     --template_path $TEMPLATE_PATH \
     --metric_path $METRIC_PATH \
     --result_path result.jsonl \
-    --no_quantize_model
+    --quantize_model
 ``````
