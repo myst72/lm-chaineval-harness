@@ -116,12 +116,21 @@ class TemplateProcessor:
         return '\n'.join(import_sentenses).strip() + '\n\n' +'\n'.join(filtered_functions).strip()
     
     ## humanevalの整形処理
+    # def format_humaneval(self, prompt, model_output):
+    #     """Collates the model output for the humaneval format."""
+    #     # if not model_output.startswith("    "):
+    #     #     model_output = "    " + model_output
+    #     combined_output = prompt + "\n" + model_output + "\n"
+    #     return self.extract_functions(combined_output)
     def format_humaneval(self, prompt, model_output):
         """Collates the model output for the humaneval format."""
-        # if not model_output.startswith("    "):
-        #     model_output = "    " + model_output
-        combined_output = prompt + "\n" + model_output + "\n"
-        return self.extract_functions(combined_output)
+        stop_sequences=["\nclass", "\ndef", "\n#", "\n@", "\nprint", "\nif", "\n```"]
+        min_stop_index = len(model_output)
+        for seq in stop_sequences:
+            stop_index = model_output.find(seq)
+            if stop_index != -1 and stop_index < min_stop_index:
+                min_stop_index = stop_index
+        return prompt + "\n" + model_output[:min_stop_index]
 
 
 
