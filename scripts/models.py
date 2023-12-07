@@ -139,6 +139,7 @@ class OpenAIModel(Model):
             "max_tokens": 512, 
             "n": 1}
         # Override defaults with any user-provided arguments
+        model_args = model_args or {}
         default_args.update(model_args)
 
         super().__init__()
