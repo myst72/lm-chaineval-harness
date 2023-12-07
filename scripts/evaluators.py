@@ -44,8 +44,15 @@ class CodeEvalEvaluator(Evaluator):
     """
     コード評価用Evaluatorクラス。HuggingFaceのevaluate-metric/code_evalを使用してスコアを算出する。
     """
+    def is_blank(self, candidates):
+        if isinstance(candidates, list):
+            for sublist in candidates:
+                if not isinstance(sublist, list) or not all(isinstance(item, str) and item.strip() == '' for item in sublist):
+                    return False
+            return True
+        return False
+
     def calculate(self, dataset, record):
-        
         # code_evalメトリックをロード
         code_eval_metric = load("code_eval")
 
@@ -57,7 +64,7 @@ class CodeEvalEvaluator(Evaluator):
             test_cases = [data['reference']]
             candidates = [[data['formatted_output']]]
 
-            if candidates != [['']]:
+            if not self.is_blank(candidates):
                 pass_at_k, results = code_eval_metric.compute(references=test_cases, predictions=candidates, k=[1])
                 data['item_pass@1_score'] = pass_at_k['pass@1'] # k=1 のスコアをリストに追加
             else:
@@ -66,7 +73,7 @@ class CodeEvalEvaluator(Evaluator):
         # 各要素からitem_scoreを取り出して平均を算出
         item_scores = [data['item_pass@1_score'] for data in dataset]
         average_pass_at_k = sum(item_scores) / len(item_scores) if item_scores else 0
-        
+
         for data in dataset:
             data['all_pass@1_score'] = average_pass_at_k
 
