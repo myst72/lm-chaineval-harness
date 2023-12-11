@@ -124,6 +124,7 @@ class TemplateProcessor:
     #     return self.extract_functions(combined_output)
     def format_humaneval(self, prompt, model_output):
         """Collates the model output for the humaneval format."""
+        model_output = model_output.strip('<outpuT>')
         stop_sequences=["\nclass", "\ndef", "\n#", "\n@", "\nprint", "\nif", "\n```"]
         min_stop_index = len(model_output)
         for seq in stop_sequences:

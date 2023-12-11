@@ -30,30 +30,48 @@ def debug_print(debug_mode, *messages):
         print("🐥", *messages)
 
 
-def save_results(result_path, results, record, final=False):
-    """Save the evaluation results to a file."""
+# def save_results(result_path, results, record, final=False):
+#     """Save the evaluation results to a file."""
 
-    # 評価算出までした場合には全て上書きで保存をする
-    mode = 'w' if final else 'a'
+#     # 評価算出までした場合には全て上書きで保存をする
+#     mode = 'w' if final else 'a'
+
+#     with open(result_path, mode, encoding='utf-8') as f:
+#         for result in results:
+#             filtered_result = record
+#             for k, v in result.items():
+#                 if 'id' in k:
+#                     filtered_result['id'] = v
+#             filtered_result['model_input'] = result.get('model_input', '')
+#             filtered_result['model_output'] = result.get('model_output', '')
+#             filtered_result['formatted_output'] = result.get('formatted_output', '')
+#             for k, v in result.items():
+#                 if 'score' in k:
+#                     filtered_result[k] = v
+#             f.write(json.dumps(filtered_result, ensure_ascii=False) + '\n')
+                    
+#             filtered_result = {
+#                 key: value for key, value in result.items()
+#                 if key in ['id', 'score'] or key in ['model_input', 'model_output', 'formatted_output']
+#             }
+
+def save_results(result_path, dataset, record, total_score=-1):
+    """Save the evaluation results to a file."""
+    mode = 'a' if total_score == -1 else 'w'
 
     with open(result_path, mode, encoding='utf-8') as f:
-        for result in results:
-            filtered_result = record
-            for k, v in result.items():
+        for data in dataset:
+            filtered_data = record.copy()
+            for k, v in data.items():
                 if 'id' in k:
-                    filtered_result['id'] = v
-            filtered_result['model_input'] = result.get('model_input', '')
-            filtered_result['model_output'] = result.get('model_output', '')
-            filtered_result['formatted_output'] = result.get('formatted_output', '')
-            for k, v in result.items():
-                if 'score' in k:
-                    filtered_result[k] = v
-            f.write(json.dumps(filtered_result, ensure_ascii=False) + '\n')
-                    
-            filtered_result = {
-                key: value for key, value in result.items()
-                if key in ['id', 'score'] or key in ['model_input', 'model_output', 'formatted_output']
-            }
+                    filtered_data['id'] = v
+            filtered_data['model_input'] = data.get('model_input', '')
+            filtered_data['model_output'] = data.get('model_output', '')
+            filtered_data['formatted_output'] = data.get('formatted_output', '')
+            filtered_data['reference'] = data.get('reference', '')
+            filtered_data['item_score'] = data.get('item_score', '')
+            filtered_data['total_score'] = total_score
+            f.write(json.dumps(filtered_data, ensure_ascii=False) + '\n')
 
 
 
@@ -85,23 +103,24 @@ def main():
     for data in tqdm(dataset):
         prompt = template.process(data)
         data['reference'] = template.process_reference(data)
-        data['model_input'] = prompt
-        data['model_output'] = model.generate(prompt)
-        data['formatted_output'] = template.collate(prompt, data['model_output'])
-
         # debug_print(args.debug_mode, "Reference:\n", data['reference'])
+        data['model_input'] = prompt
         debug_print(args.debug_mode, "Input:\n", data['model_input'])
+        data['model_output'] = model.generate(prompt)
         debug_print(args.debug_mode, "Output:\n", data['model_output'])
+        data['formatted_output'] = template.collate(prompt, data['model_output'])
         debug_print(args.debug_mode, "Formatted:\n", data['formatted_output'])
+
+        if evaluator:
+            data['item_score'] = evaluator.item_calculate(data, record)
+            debug_print(args.debug_mode, "Score:\n", data['item_score'])
 
         save_results(args.result_path, [data], record)
     
     if evaluator: 
-        score, dataset = evaluator.calculate(dataset, record)
-        print("score:\n", score)
-
-    save_results(args.result_path, dataset, record, final=True)
-
+        total_score = evaluator.total_calculate(dataset, record)
+        print("total_score:\n", total_score)
+        save_results(args.result_path, dataset, record, total_score)
 
 if __name__ == '__main__':
     main()

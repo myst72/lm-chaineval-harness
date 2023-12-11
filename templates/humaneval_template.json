@@ -3,5 +3,5 @@
     "input_lang": "en",
     "output_lang": "py", 
     "format": "humaneval", 
-    "reference": "{test}\ncheck({entry_point})"
+    "reference": "\n{test}\ncheck({entry_point})"
 }
