@@ -91,11 +91,9 @@ class HFModel(Model):
             )
             self.model = AutoModelForCausalLM.from_pretrained(
                 model_name, 
-                torch_dtype=torch.float16,
                 quantization_config=bnb_config,
                 device_map="auto", 
                 use_auth_token=hf_token if hf_token else None,
-                use_flash_attention_2=True,
             )
             # self.model = AutoModelForCausalLM.from_pretrained(
             #     model_name, device_map="auto", use_auth_token=hf_token if hf_token else None, load_in_4bit=True
@@ -103,10 +101,8 @@ class HFModel(Model):
         else:
             self.model = AutoModelForCausalLM.from_pretrained(
                 model_name, 
-                torch_dtype=torch.float16,
                 use_auth_token=hf_token if hf_token else None, 
                 device_map="auto",
-                use_flash_attention_2=True,
             )
 
         self.generator = pipeline(
