@@ -2,6 +2,9 @@ from transformers import AutoTokenizer, AutoModelForCausalLM, pipeline, BitsAndB
 import openai
 from openai import OpenAI
 import torch
+import os
+
+os.environ["TOKENIZERS_PARALLELISM"] = "false"
 
 # =====================
 # Base Classes
@@ -87,21 +90,30 @@ class HFModel(Model):
                 bnb_4bit_compute_dtype=torch.bfloat16
             )
             self.model = AutoModelForCausalLM.from_pretrained(
-                model_name, quantization_config=bnb_config, device_map="auto", use_auth_token=hf_token if hf_token else None
+                model_name, 
+                torch_dtype=torch.float16,
+                quantization_config=bnb_config,
+                device_map="auto", 
+                use_auth_token=hf_token if hf_token else None,
+                use_flash_attention_2=True,
             )
             # self.model = AutoModelForCausalLM.from_pretrained(
             #     model_name, device_map="auto", use_auth_token=hf_token if hf_token else None, load_in_4bit=True
             # )
         else:
             self.model = AutoModelForCausalLM.from_pretrained(
-                model_name, use_auth_token=hf_token if hf_token else None, device_map="auto"
+                model_name, 
+                torch_dtype=torch.float16,
+                use_auth_token=hf_token if hf_token else None, 
+                device_map="auto",
+                use_flash_attention_2=True,
             )
 
         self.generator = pipeline(
             "text-generation",
             model=model_name,
             tokenizer=self.tokenizer,
-            # device=0 if torch.cuda.is_available() else -1,
+            device=0 if torch.cuda.is_available() else -1,
             use_auth_token=hf_token if hf_token else None,
             **self.model_args
         )
