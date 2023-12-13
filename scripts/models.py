@@ -107,7 +107,7 @@ class HFModel(Model):
 
         self.generator = pipeline(
             "text-generation",
-            model=model_name,
+            model=self.model,
             tokenizer=self.tokenizer,
             device=0 if torch.cuda.is_available() else -1,
             use_auth_token=hf_token if hf_token else None,
