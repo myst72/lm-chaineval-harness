@@ -103,6 +103,7 @@ class HFModel(Model):
                 self.model = AutoModelForCausalLM.from_pretrained(
                 model_name, 
                 use_auth_token=hf_token if hf_token else None, 
+                trust_remote_code=True,
                 device_map="auto",
             )
 
