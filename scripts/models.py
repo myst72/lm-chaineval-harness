@@ -93,6 +93,7 @@ class HFModel(Model):
                 model_name, 
                 quantization_config=bnb_config,
                 device_map="auto", 
+                trust_remote_code=True,
                 use_auth_token=hf_token if hf_token else None,
             )
             # self.model = AutoModelForCausalLM.from_pretrained(
