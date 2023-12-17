@@ -30,30 +30,27 @@ def debug_print(debug_mode, *messages):
         print("🐥", *messages)
 
 
-# def save_results(result_path, results, record, final=False):
-#     """Save the evaluation results to a file."""
+def load_existing_results(result_path):
+    """Load existing results from the file."""
+    try:
+        with open(result_path, 'r', encoding='utf-8') as f:
+            return [json.loads(line) for line in f]
+    except FileNotFoundError:
+        return []
 
-#     # 評価算出までした場合には全て上書きで保存をする
-#     mode = 'w' if final else 'a'
 
-#     with open(result_path, mode, encoding='utf-8') as f:
-#         for result in results:
-#             filtered_result = record
-#             for k, v in result.items():
-#                 if 'id' in k:
-#                     filtered_result['id'] = v
-#             filtered_result['model_input'] = result.get('model_input', '')
-#             filtered_result['model_output'] = result.get('model_output', '')
-#             filtered_result['formatted_output'] = result.get('formatted_output', '')
-#             for k, v in result.items():
-#                 if 'score' in k:
-#                     filtered_result[k] = v
-#             f.write(json.dumps(filtered_result, ensure_ascii=False) + '\n')
-                    
-#             filtered_result = {
-#                 key: value for key, value in result.items()
-#                 if key in ['id', 'score'] or key in ['model_input', 'model_output', 'formatted_output']
-#             }
+def find_id_value(data):
+    for key in data.keys():
+        if 'id' in key:
+            return data[key]
+    return None
+
+
+def find_unprocessed_data(dataset, existing_results):
+    """Find data in the dataset that has not been processed yet."""
+    processed_ids = {find_id_value(result) for result in existing_results}
+    return [data for data in dataset if find_id_value(data) not in processed_ids]
+
 
 def save_results(result_path, dataset, record, total_score=-1):
     """Save the evaluation results to a file."""
@@ -98,12 +95,15 @@ def main():
         'dataset': args.dataset_path,
         'template': args.template_path,
         'metrics': args.metric_path,
-    }
+    } 
 
-    for data in tqdm(dataset):
+    existing_results = load_existing_results(args.result_path)
+    unprocessed_data = find_unprocessed_data(dataset, existing_results)
+
+    for data in tqdm(unprocessed_data):
+            
         prompt = template.process(data)
         data['reference'] = template.process_reference(data)
-        # debug_print(args.debug_mode, "Reference:\n", data['reference'])
         data['model_input'] = prompt
         debug_print(args.debug_mode, "Input:\n", data['model_input'])
         data['model_output'] = model.generate(prompt)
@@ -117,10 +117,12 @@ def main():
 
         save_results(args.result_path, [data], record)
     
-    if evaluator: 
-        total_score = evaluator.total_calculate(dataset, record)
+    if evaluator:
+        all_data = existing_results + unprocessed_data
+        total_score = evaluator.total_calculate(all_data, record)
         print("total_score:\n", total_score)
-        save_results(args.result_path, dataset, record, total_score)
+        save_results(args.result_path, all_data, record, total_score)
+
 
 if __name__ == '__main__':
     main()
