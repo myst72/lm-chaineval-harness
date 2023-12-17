@@ -1,5 +1,6 @@
 {
     "template": "Generate Python code based on the Japanese document.\nProvide only code enclosed in ``` and ```.\nDocument:\n\"\"\"\n{formatted_output}\n\"\"\"\n",
     "input_lang": "ja",
-    "output_lang": "py"
+    "output_lang": "py",
+    "reference": "{reference}"
 }
