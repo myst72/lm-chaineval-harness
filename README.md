@@ -28,7 +28,7 @@ HF_TOKEN=HF_TOKEN
 
 ## 評価方法
 
-1. [`templates`](https://github.com/KuramitsuLab/lm-chaineval-harness/tree/main/templates) からテンプレートファイルを選ぶ
+1. [`templates`](https://github.com/KuramitsuLab/lm-chaineval-harness/tree/main/templates) からテンプレートファイルを選ぶ、もしくは作成する
 2. 任意のパス名に変更後、`chain.sh` として保存する
     ```sh
     MODEL_PATH="MODEL_PATH"
@@ -96,6 +96,44 @@ HF_TOKEN=HF_TOKEN
         --template_path $TEMPLATE_PATH \
         --metric_path $METRIC_PATH \
         --result_path result.jsonl \
+    ```
+
+## 評価方法 - BackCodeEval
+
+逆翻訳を活用した実行ベースでの評価方法をサポートしています。
+
+
+1. [`templates`](https://github.com/KuramitsuLab/lm-chaineval-harness/tree/main/templates) からテンプレートファイルを選ぶ、もしくは作成する
+2. 任意のパス名に変更後、`chain.sh` として保存する
+    ```sh
+    # 評価したいタスク
+    python3 ./scripts/main.py \
+        --model_path <MODEL_PATH> \
+        --dataset_path <DATASET_PATH> \
+        --template_path <TEMPLATE_1_PATH> \
+        --result_path <RESULT_1_PATH> \
+    
+    # BackCodeEval
+    python3 ./scripts/main.py \
+        --model_path <MODEL_PATH> \
+        --dataset_path <RESULT_1_PATH> \
+        --template_path <TEMPLATE_2_PATH> \
+        --metric_path <METRIC_PATH> \
+        --result_path result_all.jsonl \
+    ```
+    
+    - `MODEL_PATH` : 評価したいモデルのパス名を指定
+    - `DATASET_PATH` : HuggingFace Hub 上で提供されているデータセットのパス名を指定
+        - 個人がローカルに所有するjsonl 形式のデータを指定することも可能
+    - `TEMPLATE_1_PATH`, `TEMPLATE_2_PATH` : [`templates`](https://github.com/KuramitsuLab/lm-chaineval-harness/tree/main/templates) から選んだテンプレートのパス名を指定
+        - 個人で新たに作成したテンプレートのパス名の指定も可能
+    - `METRIC_PATH` : 評価指標のパス名を指定
+        - [HuggingFaceのevaluate-metric](https://huggingface.co/evaluate-metric)で提供されているパス名で指定する (e.g., pass@k: `code_eval`)
+
+
+3. 評価を実行する
+    ```sh
+    sh chain.sh
     ```
 
 ## その他のオプション
