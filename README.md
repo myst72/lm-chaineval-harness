@@ -100,6 +100,26 @@ HF_TOKEN=HF_TOKEN
 
 ## その他のオプション
 
+### モデルのパラメータ設定
+
+HuggingFace のPipeline で使用できるパラメータを個別で設定可能です。  
+`model_args` として与えてください。
+
+```sh
+MODEL_PATH="MODEL_PATH"
+DATASET_PATH="DATASET_PATH"
+TEMPLATE_PATH="TEMPLATE_PATH"
+METRIC_PATH="METRIC_PATH"
+
+python3 ./scripts/main.py \
+    --model_path $MODEL_PATH \
+    --model_args '{"temperature": 0.1, "top_p": 0.90, "max_new_tokens": 512}' \
+    --dataset_path $DATASET_PATH \
+    --template_path $TEMPLATE_PATH \
+    --metric_path $METRIC_PATH \
+    --result_path result.jsonl \
+```
+
 ### 量子化の有効化
 
 [bitsandbytes](https://github.com/TimDettmers/bitsandbytes) を使用した4bitでの量子化を指定することができます。  
@@ -118,4 +138,23 @@ python3 ./scripts/main.py \
     --metric_path $METRIC_PATH \
     --result_path result.jsonl \
     --quantize_model
-``````
+```
+
+### デバッグモード
+
+`debug_mode` を追加するとデバッグモードになります。
+
+```sh
+MODEL_PATH="MODEL_PATH"
+DATASET_PATH="DATASET_PATH"
+TEMPLATE_PATH="TEMPLATE_PATH"
+METRIC_PATH="METRIC_PATH"
+
+python3 ./scripts/main.py \
+    --model_path $MODEL_PATH \
+    --dataset_path $DATASET_PATH \
+    --template_path $TEMPLATE_PATH \
+    --metric_path $METRIC_PATH \
+    --result_path result.jsonl \
+    --debug_mode
+```
