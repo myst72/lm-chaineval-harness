@@ -58,46 +58,6 @@ HF_TOKEN=HF_TOKEN
     sh chain.sh
     ```
 
-### アクセストークンやAPI が必要なモデルの評価
-
-- HuggingFace アクセストークンの場合：
-
-    ```sh
-    MODEL_PATH="MODEL_PATH"
-    DATASET_PATH="DATASET_PATH"
-    TEMPLATE_PATH="TEMPLATE_PATH"
-    METRIC_PATH="METRIC_PATH"
-
-    source ./.env
-
-    python3 ./scripts/main.py \
-        --model_path $MODEL_PATH \
-        --hf_token $HF_TOKEN \
-        --dataset_path $DATASET_PATH \
-        --template_path $TEMPLATE_PATH \
-        --metric_path $METRIC_PATH \
-        --result_path result.jsonl \
-    ```
-
-- OpenAI APIキーの場合：
-
-    ```sh
-    MODEL_PATH="MODEL_PATH"
-    DATASET_PATH="DATASET_PATH"
-    TEMPLATE_PATH="TEMPLATE_PATH"
-    METRIC_PATH="METRIC_PATH"
-
-    source ./.env
-
-    python3 ./scripts/main.py \
-        --model_path $MODEL_PATH \
-        --openai_api_key $OPENAI_API_KEY \
-        --dataset_path $DATASET_PATH \
-        --template_path $TEMPLATE_PATH \
-        --metric_path $METRIC_PATH \
-        --result_path result.jsonl \
-    ```
-
 ## 評価方法 - BackCodeEval
 
 逆翻訳を活用した実行ベースでの評価方法をサポートしています。
@@ -135,6 +95,46 @@ HF_TOKEN=HF_TOKEN
     ```sh
     sh chain.sh
     ```
+
+## アクセストークンやAPI が必要なモデルの評価
+
+### HuggingFace アクセストークンの場合：
+
+```sh
+MODEL_PATH="MODEL_PATH"
+DATASET_PATH="DATASET_PATH"
+TEMPLATE_PATH="TEMPLATE_PATH"
+METRIC_PATH="METRIC_PATH"
+
+source ./.env
+
+python3 ./scripts/main.py \
+    --model_path $MODEL_PATH \
+    --hf_token $HF_TOKEN \
+    --dataset_path $DATASET_PATH \
+    --template_path $TEMPLATE_PATH \
+    --metric_path $METRIC_PATH \
+    --result_path result.jsonl \
+```
+
+### OpenAI APIキーの場合：
+
+```sh
+MODEL_PATH="MODEL_PATH"
+DATASET_PATH="DATASET_PATH"
+TEMPLATE_PATH="TEMPLATE_PATH"
+METRIC_PATH="METRIC_PATH"
+
+source ./.env
+
+python3 ./scripts/main.py \
+    --model_path $MODEL_PATH \
+    --openai_api_key $OPENAI_API_KEY \
+    --dataset_path $DATASET_PATH \
+    --template_path $TEMPLATE_PATH \
+    --metric_path $METRIC_PATH \
+    --result_path result.jsonl \
+```
 
 ## その他のオプション
 
