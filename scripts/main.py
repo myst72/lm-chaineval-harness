@@ -1,5 +1,6 @@
 import argparse
 import json
+import os
 from tqdm import tqdm
 from models import load_model
 from dataloaders import load_testdata
@@ -55,6 +56,10 @@ def find_unprocessed_data(dataset, existing_results):
 def save_results(result_path, dataset, record, total_score=-1):
     """Save the evaluation results to a file."""
     mode = 'a' if total_score == -1 else 'w'
+
+    directory = os.path.dirname(result_path)
+    if not os.path.exists(directory):
+        os.makedirs(directory)
 
     with open(result_path, mode, encoding='utf-8') as f:
         for data in dataset:
