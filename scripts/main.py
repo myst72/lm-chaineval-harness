@@ -20,7 +20,7 @@ def parse_args():
     parser.add_argument('--template_path', type=str, required=True, help='Path to the template file')
     parser.add_argument('--metric_path', type=str, default=False, help='Path to the metric file')
     parser.add_argument('--metric_args', type=json.loads, default=None, help='Metric arguments in JSON format')
-    parser.add_argument('--result_path', type=str, default='./result.jsonl', help='Path to the result file')
+    parser.add_argument('--result_path', type=str, default='./log/result.jsonl', help='Path to the result file')
     parser.add_argument('--debug_mode', action='store_true', help='Enable debug mode for verbose output')
     return parser.parse_args()
 
