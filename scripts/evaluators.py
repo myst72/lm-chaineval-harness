@@ -208,6 +208,23 @@ class F1Evaluator(Evaluator):
         return total_score
 
 
+class EMEvaluator(Evaluator):
+    def item_calculate(self, data, record):
+        predictions = data['model_output']
+        references = data['reference']
+        item_score = self.metric.compute(predictions=predictions, references=references)['exact_match']
+        self.item_scores.append(item_score)
+
+        return item_score
+    
+    def total_calculate(self, dataset, record):
+        if self.item_scores:
+            total_score = sum(self.item_scores) / len(self.item_scores)
+        else:
+            total_score = 0.00
+        return total_score
+
+
 # =====================
 # Evaluator Loader Factory
 # =====================
@@ -229,6 +246,8 @@ class EvaluatorLoaderFactory:
             return BLEUEvaluator(metric_path, metric_args)
         elif metric_path == "f1":
             return F1Evaluator(metric_path, metric_args)
+        elif metric_path == "exact_match":
+            return EMEvaluator(metric_path, metric_args)
         else:
             raise ValueError(f"Unknown metric path: {metric_path}")
 

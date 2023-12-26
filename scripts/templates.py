@@ -52,6 +52,10 @@ class TemplateProcessor:
         
         elif output_format == 'humaneval':
             formatted_output = self.format_humaneval(prompt, model_output)# humanevalの整形処理
+
+        elif output_format == 'multiplechoice':
+            formatted_output = self.format_multiplechoice(prompt, model_output)
+
         else:
             raise ValueError(f"Unsupported output format: {format}")
 
@@ -61,7 +65,7 @@ class TemplateProcessor:
     ## 自然言語の整形処理
     def format_natural_language(self, prompt, model_output):
         """Formats the natural language text according to specific rules."""
-        extracted_output = self.extract_triple_quoted_text(model_output)
+        extracted_output = self.extract_triple_quoted_text(model_output) #TODO：プロンプト指示に合わせて抽出する
         formatted_output = self.remove_prompt_lines(prompt, extracted_output)
         return formatted_output
 
@@ -132,6 +136,16 @@ class TemplateProcessor:
             if stop_index != -1 and stop_index < min_stop_index:
                 min_stop_index = stop_index
         return prompt + "\n" + model_output[:min_stop_index]
+
+
+    def format_multiplechoice(self, prompt, model_output):
+        """Collates the model output for the multiplechoice format."""
+        if len(model_output) == 1:
+            formatted_output = model_output
+        else:
+            formatted_output = model_output.strip('')
+            formatted_output = formatted_output[0]
+        return formatted_output
 
 
 
