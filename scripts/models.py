@@ -1,8 +1,10 @@
+import torch
+import os
 from transformers import AutoTokenizer, AutoModelForCausalLM, pipeline, BitsAndBytesConfig
 import openai
 from openai import OpenAI
-import torch
-import os
+import json
+import boto3
 
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
 
@@ -179,17 +181,86 @@ class OpenAIModelLoader(ModelLoader):
 
 
 # =====================
+# Anthropic Model Integration
+# =====================
+
+class AnthropicModel(Model):
+    def __init__(self, aws_access_key_id, aws_secret_access_key, model_name, model_args=None):
+        # Default arguments for Anthropic Claude API
+        default_args = {
+            "max_tokens_to_sample": 512,
+            "temperature": 0.2,
+            "top_p": 0.95,
+        }
+        # Override defaults with any user-provided arguments
+        model_args = model_args or {}
+        default_args.update(model_args)
+
+        super().__init__()
+        self.aws_access_key_id = aws_access_key_id
+        self.aws_secret_access_key = aws_secret_access_key
+        self.model_name = model_name
+        self.model_args = default_args
+    
+    def check_and_append_claude_format(self, prompt: str) -> str:
+        human_str = "\n\nHuman:"
+        assistant_str = "\n\nAssistant:"
+
+        if human_str not in prompt:
+            prompt = human_str + prompt
+
+        if assistant_str not in prompt:
+            prompt += assistant_str
+
+        return prompt
+
+    def generate(self, prompt: str) -> str:
+        bedrock = boto3.client("bedrock-runtime",
+                aws_access_key_id=self.aws_access_key_id,
+                aws_secret_access_key=self.aws_secret_access_key,
+                region_name='ap-northeast-1'
+        )
+
+        prompt = self.check_and_append_claude_format(prompt)
+
+        body = json.dumps(
+            {
+                "prompt": prompt,
+                # "prompt": "\n\nHuman: Tell me a funny joke about outer space\n\nAssistant:",
+                "anthropic_version": "bedrock-2023-05-31",
+                **self.model_args,
+            }
+        )
+
+        response = bedrock.invoke_model(body=body, modelId=self.model_name)
+        response_body = json.loads(response.get("body").read())
+        return response_body.get("completion")
+
+class AnthropicModelLoader(ModelLoader):
+    def __init__(self, aws_access_key_id, aws_secret_access_key, model_name, model_args=None):
+        super().__init__(model_name, model_args)
+        self.aws_access_key_id = aws_access_key_id
+        self.aws_secret_access_key = aws_secret_access_key
+
+    def load(self) -> AnthropicModel:
+
+        return AnthropicModel(self.aws_access_key_id, self.aws_secret_access_key, self.model_name, self.model_args)
+
+
+# =====================
 # Model Loader Factory
 # =====================
 
 class ModelLoaderFactory:
     @staticmethod
-    def create(model_name, openai_api_key=None, hf_token=None, model_args=None, quantize=True):
+    def create(model_name, openai_api_key=None, aws_access_key_id=None, aws_secret_access_key=None, hf_token=None, model_args=None, quantize=True):
         try:
             if model_name == "test":
                 return TestModelLoader(model_name, model_args)
             elif model_name.startswith("gpt"):
                 return OpenAIModelLoader(openai_api_key, model_name, model_args)
+            elif model_name.startswith("anthropic"):
+                return AnthropicModelLoader(aws_access_key_id, aws_secret_access_key, model_name, model_args)
             else:
                 return HFModelLoader(model_name, hf_token, model_args, quantize)
         except Exception as e:
@@ -202,7 +273,15 @@ class ModelLoaderFactory:
 # Utility Function
 # =====================
 
-def load_model(model_path, openai_api_key, hf_token, model_args, quantize):
-    model_loader = ModelLoaderFactory.create(model_path, openai_api_key, hf_token, model_args, quantize)
+def load_model(model_path, openai_api_key, aws_access_key_id, aws_secret_access_key, hf_token, model_args, quantize):
+    model_loader = ModelLoaderFactory.create(
+        model_path, 
+        openai_api_key, 
+        aws_access_key_id, 
+        aws_secret_access_key, 
+        hf_token, 
+        model_args, 
+        quantize
+    )
     model = model_loader.load()
     return model
