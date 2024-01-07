@@ -12,3 +12,5 @@ scikit-learn
 accelerate
 bitsandbytes
 tqdm
+anthropic-bedrock
+boto3>=1.28.59
