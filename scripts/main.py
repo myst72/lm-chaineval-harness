@@ -15,6 +15,8 @@ def parse_args():
     parser.add_argument('--quantize_model', action='store_true', help='Enable model quantization with bitsandbytes')
     parser.add_argument('--openai_api_key', type=str, default=None, help='OpenAI API token')
     parser.add_argument('--hf_token', type=str, default=None, help='HuggingFace API token')
+    parser.add_argument('--aws_access_key_id', type=str, default=None, help='AWS access key ID')
+    parser.add_argument('--aws_secret_access_key', type=str, default=None, help='AWS secret access key')
     parser.add_argument('--dataset_path', type=str, required=True, help='Path to the dataset file')
     parser.add_argument('--dataset_args', type=json.loads, default=None, help='Dataset arguments in JSON format')
     parser.add_argument('--template_path', type=str, required=True, help='Path to the template file')
@@ -69,12 +71,13 @@ def save_results(result_path, dataset, record, total_score=-1):
                     filtered_data['id'] = v
             filtered_data['model_input'] = data.get('model_input', '')
             filtered_data['model_output'] = data.get('model_output', '')
+            filtered_data['output_format'] = data.get('output_format', '')
+            filtered_data['formatted_correctly'] = data.get('formatted_correctly', '')
             filtered_data['formatted_output'] = data.get('formatted_output', '')
             filtered_data['reference'] = data.get('reference', '')
             filtered_data['item_score'] = data.get('item_score', '')
             filtered_data['total_score'] = total_score
             f.write(json.dumps(filtered_data, ensure_ascii=False) + '\n')
-
 
 
 def main():
@@ -83,7 +86,7 @@ def main():
     quantize = args.quantize_model
     debug_print(args.debug_mode, "Quantization:\n", quantize)
 
-    model = load_model(args.model_path, args.openai_api_key, args.hf_token, args.model_args, quantize)
+    model = load_model(args.model_path, args.openai_api_key, args.aws_access_key_id, args.aws_secret_access_key, args.hf_token, args.model_args, quantize)
     debug_print(args.debug_mode, "Model loaded:\n", model)
 
     dataset = load_testdata(args.dataset_path, args.dataset_args)
@@ -113,12 +116,21 @@ def main():
         debug_print(args.debug_mode, "Input:\n", data['model_input'])
         data['model_output'] = model.generate(prompt)
         debug_print(args.debug_mode, "Output:\n", data['model_output'])
-        data['formatted_output'] = template.collate(prompt, data['model_output'])
+        output_format, formatted_output = template.collate(prompt, data['model_output'])
+        data['output_format'] = output_format
+        if isinstance(formatted_output, dict):
+            data['formatted_output'] = formatted_output["output"]
+            data['formatted_correctly'] = formatted_output["formatted_correctly"]
+        else:
+            data['formatted_output'] = formatted_output
         debug_print(args.debug_mode, "Formatted:\n", data['formatted_output'])
 
         if evaluator:
-            data['item_score'] = evaluator.item_calculate(data, record)
-            debug_print(args.debug_mode, "Score:\n", data['item_score'])
+            if data['formatted_output'] is None:
+                data['item_score'] = 0.0
+            else:
+                data['item_score'] = evaluator.item_calculate(data, record)
+                debug_print(args.debug_mode, "Score:\n", data['item_score'])
 
         save_results(args.result_path, [data], record)
     
