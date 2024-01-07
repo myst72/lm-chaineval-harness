@@ -116,7 +116,7 @@ def main():
         debug_print(args.debug_mode, "Input:\n", data['model_input'])
         data['model_output'] = model.generate(prompt)
         debug_print(args.debug_mode, "Output:\n", data['model_output'])
-        output_format, formatted_output = template.collate(prompt, data['model_output'])
+        output_lang, output_format, formatted_output = template.collate(prompt, data['model_output'])
         data['output_format'] = output_format
         if isinstance(formatted_output, dict):
             data['formatted_output'] = formatted_output["output"]
@@ -129,14 +129,14 @@ def main():
             if data['formatted_output'] is None:
                 data['item_score'] = 0.0
             else:
-                data['item_score'] = evaluator.item_calculate(data, record)
+                data['item_score'] = evaluator.item_calculate(data, record, output_lang)
                 debug_print(args.debug_mode, "Score:\n", data['item_score'])
 
         save_results(args.result_path, [data], record)
     
     if evaluator:
         all_data = existing_results + unprocessed_data
-        total_score = evaluator.total_calculate(all_data, record)
+        total_score = evaluator.total_calculate(all_data, record, output_lang)
         print("total_score:\n", total_score)
         save_results(args.result_path, all_data, record, total_score)
 

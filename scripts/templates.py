@@ -71,7 +71,7 @@ class TemplateProcessor:
         else:
             raise ValueError(f"Unsupported output format: {format}")
 
-        return output_format, formatted_output
+        return output_lang, output_format, formatted_output
     
 
     # collate-subfunction

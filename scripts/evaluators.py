@@ -1,5 +1,6 @@
 from evaluate import load
 import os
+import re
 
 # =====================
 # Base Class
@@ -18,13 +19,13 @@ class Evaluator:
         self.metric_args = metric_args
         self.item_scores = []
     
-    def item_calculate(self, data, record):
+    def item_calculate(self, data, record, output_lang):
         """
         Calculate the score for a single item in the dataset.
         """
         raise NotImplementedError("Must implement item_calculate in subclass")
 
-    def total_calculate(self, dataset, record):
+    def total_calculate(self, dataset, record, output_lang):
         """
         Aggregate the scores of all items and calculate the total score.
         """
@@ -48,13 +49,13 @@ class TestEvaluator(Evaluator):
     #         data['test_result_score'] = result_score
     #     return result_score, dataset
 
-    def item_calculate(self, data, record):
+    def item_calculate(self, data, record, output_lang):
         # 個々のoutputの長さをスコアとする
         item_score = len(data['formatted_output'])
         self.item_scores.append(item_score)
         return item_score
     
-    def total_calculate(self, dataset, record):
+    def total_calculate(self, dataset, record, output_lang):
         if self.item_scores:
             total_score = sum(self.item_scores) / len(self.item_scores)
         else:
@@ -109,7 +110,7 @@ class CodeEvalEvaluator(Evaluator):
 
 
 
-    def item_calculate(self, data, record):
+    def item_calculate(self, data, record, output_lang):
         test_cases = [data['reference']]
         candidates = [[data['formatted_output']]]
         if not self.is_blank(candidates):
@@ -120,7 +121,7 @@ class CodeEvalEvaluator(Evaluator):
         self.item_scores.append(item_score)
         return item_score
     
-    def total_calculate(self, dataset, record):
+    def total_calculate(self, dataset, record, output_lang):
         if self.item_scores:
             total_score = sum(self.item_scores) / len(self.item_scores) 
         else:
@@ -145,10 +146,10 @@ class AccuracyEvaluator(Evaluator):
 
     #     return score, dataset
 
-    def item_calculate(self, data, record):
+    def item_calculate(self, data, record, output_lang):
         return None
     
-    def total_calculate(self, dataset, record):
+    def total_calculate(self, dataset, record, output_lang):
         predictions = [int(data['model_output']) for data in dataset]
         references = [int(data['reference']) for data in dataset]
         total_score = self.metric.compute(predictions=predictions, references=references)['accuracy']
@@ -168,19 +169,59 @@ class BLEUEvaluator(Evaluator):
     #         data['bleu_score'] = score
 
     #     return score, dataset
-    def item_calculate(self, data, record):
-        predictions = [data['model_output']]
-        references = [[data['reference']]]
-        item_score = self.metric.compute(predictions=predictions, references=references)['bleu']
-        return item_score
-    
-    def total_calculate(self, dataset, record):
-        if self.item_scores:
-            total_score = sum(self.item_scores) / len(self.item_scores)
-        else:
-            total_score = 0.00
-        return total_score
 
+    # 日本語用のtokenizer
+    # Python: 正規表現による簡易版形態素解析
+    # https://qiita.com/kinoshita_yuri/items/e15f143981f1616994ed
+    def tokenize_ja(text):
+        pJA = re.compile(r"/|[A-Z]+|[a-z]+|[ァ-ンー]+|[ぁ-ん-]+|[ァ-ヶ]+|[一-龍]+|[。、]|/")
+        text_m = []
+        m = pJA.findall(text)
+        for row in m:
+            if re.compile(r'^[あ-ん]+$').fullmatch(row):
+                if row[0] in 'はがのにへともでを':
+                    prefix = row[0]
+                    token = row[1:]
+                    text_m.append(prefix)
+                    if (len(token) > 0):
+                        text_m.append(token)
+                elif row[-2:] in 'のでからまで':
+                    token = row[0:-2]
+                    suffix = row[-2:]
+                    text_m.append(token)
+                    text_m.append(suffix)
+                elif row[-1:] in 'もはがでを':
+                    token = row[0:-1]
+                    suffix = row[-1:]
+                    text_m.append(token)
+                    text_m.append(suffix)
+                else:
+                    text_m.append(row)
+            else:
+                text_m.append(row)
+        return text_m
+    
+    def item_calculate(self, data, record, output_lang):
+        predictions = [data['formatted_output']]
+        references = [[data['reference']]]
+        if output_lang == 'ja':
+            item_score = self.metric.compute(predictions=predictions, references=references, tokenier=tokenize_ja, smooth=True)['bleu']
+        else:
+            item_score = self.metric.compute(predictions=predictions, references=references, smooth=True)['bleu']
+        self.item_scores.append(item_score)
+        
+        return item_score
+
+    def total_calculate(self, dataset, record, output_lang):
+        predictions = [data['formatted_output'] for data in dataset]
+        references = [[data['reference']] for data in dataset]
+        if output_lang == 'ja':
+            total_score = self.metric.compute(predictions=predictions, references=references, tokenier=tokenize_ja, smooth=True)['bleu']
+        else:
+            total_score = self.metric.compute(predictions=predictions, references=references, smooth=True)['bleu']
+
+        return total_score
+        
 
 class F1Evaluator(Evaluator):
     # def calculate(self, dataset, record):
@@ -198,10 +239,10 @@ class F1Evaluator(Evaluator):
     #         data['f1_score'] = score
 
     #     return score, dataset
-    def item_calculate(self, data, record):
+    def item_calculate(self, data, record, output_lang):
         return None
     
-    def total_calculate(self, dataset, record):
+    def total_calculate(self, dataset, record, output_lang):
         predictions = [int(data['model_output']) for data in dataset]
         references = [int(data['reference']) for data in dataset]
         total_score = self.metric.compute(predictions=predictions, references=references)["f1"]
@@ -209,7 +250,7 @@ class F1Evaluator(Evaluator):
 
 
 class EMEvaluator(Evaluator):
-    def item_calculate(self, data, record):
+    def item_calculate(self, data, record, output_lang):
         predictions = data['model_output']
         references = data['reference']
         item_score = self.metric.compute(predictions=predictions, references=references)['exact_match']
@@ -217,7 +258,7 @@ class EMEvaluator(Evaluator):
 
         return item_score
     
-    def total_calculate(self, dataset, record):
+    def total_calculate(self, dataset, record, output_lang):
         if self.item_scores:
             total_score = sum(self.item_scores) / len(self.item_scores)
         else:
