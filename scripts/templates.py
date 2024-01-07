@@ -1,6 +1,7 @@
 import json
 import re
 import ast
+import textwrap
 
 class TemplateProcessor:
     def __init__(self, template_path):
@@ -50,6 +51,17 @@ class TemplateProcessor:
             else:
                 raise ValueError(f"Unsupported output language: {output_lang}")
         
+        elif 'xml_' in output_format:
+            formatted_output = self.format_xml(output_format, model_output)# xmlタグ形式の整形処理
+
+            if formatted_output['output'] is not None:
+                if output_lang in ['NL', 'en', 'ja', 'ko']:  # NL: promptに含まれる文字列のremove
+                    formatted_output['output'] = self.remove_prompt_lines(prompt, formatted_output['output'])
+                elif output_lang in ['PL', 'py', 'cpp', 'js', 'ru']:  # PL: 余分なインデント削除
+                    formatted_output['output'] = self.remove_leading_whitespace(formatted_output['output'])
+                else:
+                    raise ValueError(f"Unsupported output language: {output_lang}")
+        
         elif output_format == 'humaneval':
             formatted_output = self.format_humaneval(prompt, model_output)# humanevalの整形処理
 
@@ -59,8 +71,9 @@ class TemplateProcessor:
         else:
             raise ValueError(f"Unsupported output format: {format}")
 
-        return formatted_output
+        return output_format, formatted_output
     
+
     # collate-subfunction
     ## 自然言語の整形処理
     def format_natural_language(self, prompt, model_output):
@@ -81,18 +94,31 @@ class TemplateProcessor:
         return extracted_text
 
     def remove_prompt_lines(self, prompt, text):
-        """Removes lines that contain the same text as the prompt."""
-        prompt_lines = set(prompt.splitlines())
+        """Removes lines that contain the same text as the prompt, ignoring leading whitespace."""
+        prompt_lines = set(line.strip() for line in prompt.splitlines())
         text_lines = text.splitlines()
-        filtered_lines = [line for line in text_lines if line not in prompt_lines]
+        filtered_lines = [line for line in text_lines if line.strip() not in prompt_lines]
         return '\n'.join(filtered_lines)
+
 
     ## プログラミング言語の整形処理
     def format_programming_language(self, prompt, model_output):
         """Formats the programming language code according to specific rules."""
         extracted_output = self.extract_code_blocks(model_output) + "\n"
+        # extracted_output = self.extract_first_code_block(model_output) + "\n"
         formatted_output = self.extract_functions(extracted_output)
+        formatted_output = self.remove_leading_whitespace(formatted_output)
         return formatted_output
+
+    # def extract_first_code_block(self, text):
+    #     """Extracts text enclosed in the first code block."""
+    #     pattern_codeblock = r'```.*?```'
+    #     match = re.search(pattern_codeblock, text, re.DOTALL)
+    #     if match:
+    #         extracted_text = match.group()[3:-3]
+    #     else:
+    #         extracted_text = text
+    #     return extracted_text
 
     def extract_code_blocks(self, text):
         """Extracts text enclosed in code blocks."""
@@ -119,6 +145,25 @@ class TemplateProcessor:
         filtered_functions = [func for func in functions if 'return' in func]
         return '\n'.join(import_sentenses).strip() + '\n\n' +'\n'.join(filtered_functions).strip()
     
+    def remove_leading_whitespace(self, code:str):
+        """Remove leading whitespace (common minimum indent) from each line in the given code."""
+        return textwrap.dedent(code).strip()
+
+
+    # xml形式の整形処理
+    def format_xml(self, output_format, model_output):
+        """Collates the model output for the xml format."""
+        tag_name = output_format.split("_")[1] # output_format:xml_code → </code>
+        stop_sequence = f"</{tag_name}>"
+        stop_index = model_output.find(stop_sequence)
+
+        if stop_index != -1:  # stop_sequence が見つかった場合
+            formatted_output = model_output[:stop_index]
+            return {"formatted_correctly": 1, "output": formatted_output}
+        else:
+            return {"formatted_correctly": 0, "output": None}
+
+
     ## humanevalの整形処理
     # def format_humaneval(self, prompt, model_output):
     #     """Collates the model output for the humaneval format."""
@@ -156,3 +201,4 @@ class TemplateProcessor:
 def load_template(template_path):
     template = TemplateProcessor(template_path)
     return template
+    
