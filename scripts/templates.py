@@ -38,40 +38,85 @@ class TemplateProcessor:
         except IndexError as e:
             raise IndexError(f"Index error in reference formatting: {e}")
 
-    def collate(self, prompt:str, model_output:str) -> str:
+    # def collate(self, prompt:str, model_output:str) -> str:
+    #     """Collates the model output based on the language and format specified in the template data."""
+    #     output_lang = self.template_data.get('output_lang', '')
+    #     output_format = self.template_data.get('format', 'default')
+
+    #     if output_format == 'default':
+    #         if output_lang in ['NL', 'en', 'ja', 'ko']:
+    #             formatted_output = self.format_natural_language(prompt, model_output)# 自然言語の整形処理
+    #         elif output_lang in ['PL', 'py', 'cpp', 'js', 'ru']:
+    #             formatted_output = self.format_programming_language(prompt, model_output)# プログラミング言語の整形処理
+    #         else:
+    #             raise ValueError(f"Unsupported output language: {output_lang}")
+        
+    #     elif 'xml_' in output_format:
+    #         formatted_output = self.format_xml(output_format, model_output)# xmlタグ形式の整形処理
+
+    #         if formatted_output['output'] is not None:
+    #             if output_lang in ['NL', 'en', 'ja', 'ko']:  # NL: promptに含まれる文字列のremove
+    #                 formatted_output['output'] = self.remove_prompt_lines(prompt, formatted_output['output'])
+    #             elif output_lang in ['PL', 'py', 'cpp', 'js', 'ru']:  # PL: 余分なインデント削除
+    #                 formatted_output['output'] = self.remove_leading_whitespace(formatted_output['output'])
+    #             else:
+    #                 raise ValueError(f"Unsupported output language: {output_lang}")
+        
+    #     elif output_format == 'humaneval':
+    #         formatted_output = self.format_humaneval(prompt, model_output)# humanevalの整形処理
+
+    #     elif output_format == 'multiplechoice':
+    #         formatted_output = self.format_multiplechoice(prompt, model_output)
+        
+    #     elif output_format == 'tag':
+    #         formatted_output = self.extract_tag(model_output)
+
+    #     else:
+    #         raise ValueError(f"Unsupported output format: {format}")
+
+    #     return output_lang, output_format, formatted_output
+    
+    def collate(self, prompt:str, model_output_list:list) -> list:
         """Collates the model output based on the language and format specified in the template data."""
         output_lang = self.template_data.get('output_lang', '')
         output_format = self.template_data.get('format', 'default')
+        formatted_output_list = []
 
-        if output_format == 'default':
-            if output_lang in ['NL', 'en', 'ja', 'ko']:
-                formatted_output = self.format_natural_language(prompt, model_output)# 自然言語の整形処理
-            elif output_lang in ['PL', 'py', 'cpp', 'js', 'ru']:
-                formatted_output = self.format_programming_language(prompt, model_output)# プログラミング言語の整形処理
-            else:
-                raise ValueError(f"Unsupported output language: {output_lang}")
-        
-        elif 'xml_' in output_format:
-            formatted_output = self.format_xml(output_format, model_output)# xmlタグ形式の整形処理
-
-            if formatted_output['output'] is not None:
-                if output_lang in ['NL', 'en', 'ja', 'ko']:  # NL: promptに含まれる文字列のremove
-                    formatted_output['output'] = self.remove_prompt_lines(prompt, formatted_output['output'])
-                elif output_lang in ['PL', 'py', 'cpp', 'js', 'ru']:  # PL: 余分なインデント削除
-                    formatted_output['output'] = self.remove_leading_whitespace(formatted_output['output'])
+        for model_output in model_output_list:
+            if output_format == 'default':
+                if output_lang in ['NL', 'en', 'ja', 'ko']:
+                    formatted_output = self.format_natural_language(prompt, model_output)# 自然言語の整形処理
+                elif output_lang in ['PL', 'py', 'cpp', 'js', 'ru']:
+                    formatted_output = self.format_programming_language(prompt, model_output)# プログラミング言語の整形処理
                 else:
                     raise ValueError(f"Unsupported output language: {output_lang}")
-        
-        elif output_format == 'humaneval':
-            formatted_output = self.format_humaneval(prompt, model_output)# humanevalの整形処理
+            
+            elif 'xml_' in output_format:
+                formatted_output = self.format_xml(output_format, model_output)# xmlタグ形式の整形処理
 
-        elif output_format == 'multiplechoice':
-            formatted_output = self.format_multiplechoice(prompt, model_output)
+                if formatted_output['output'] is not None:
+                    if output_lang in ['NL', 'en', 'ja', 'ko']:  # NL: promptに含まれる文字列のremove
+                        formatted_output['output'] = self.remove_prompt_lines(prompt, formatted_output['output'])
+                    elif output_lang in ['PL', 'py', 'cpp', 'js', 'ru']:  # PL: 余分なインデント削除
+                        formatted_output['output'] = self.remove_leading_whitespace(formatted_output['output'])
+                    else:
+                        raise ValueError(f"Unsupported output language: {output_lang}")
+            
+            elif output_format == 'humaneval':
+                formatted_output = self.format_humaneval(prompt, model_output)# humanevalの整形処理
 
-        else:
-            raise ValueError(f"Unsupported output format: {format}")
+            elif output_format == 'multiplechoice':
+                formatted_output = self.format_multiplechoice(prompt, model_output)
+            
+            elif output_format == 'tag':
+                formatted_output = self.extract_tag(model_output)
 
-        return output_lang, output_format, formatted_output
+            else:
+                raise ValueError(f"Unsupported output format: {format}")
+            
+            formatted_output_list.append(formatted_output)
+
+        return output_lang, output_format, formatted_output_list
     
 
     # collate-subfunction
@@ -92,6 +137,8 @@ class TemplateProcessor:
         else:
             extracted_text = text
         return extracted_text
+    
+
 
     def remove_prompt_lines(self, prompt, text):
         """Removes lines that contain the same text as the prompt, ignoring leading whitespace."""
@@ -162,6 +209,16 @@ class TemplateProcessor:
             return {"formatted_correctly": 1, "output": formatted_output}
         else:
             return {"formatted_correctly": 0, "output": None}
+        
+    # tag形式の整形処理
+    def extract_tag(self, model_output):
+        pattern_tag = r"\[PYTHON\](.*?)\[/PYTHON\]"
+        match = re.search(pattern_tag, model_output, re.DOTALL)
+        if match:
+            extracted_text = match.group(1).strip()
+        else:
+            extracted_text = model_output
+        return extracted_text
 
 
     ## humanevalの整形処理

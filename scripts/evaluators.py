@@ -1,6 +1,7 @@
 from evaluate import load
 import os
 import re
+os.environ["HF_ALLOW_CODE_EVAL"] = "1"
 
 # =====================
 # Base Class
@@ -15,7 +16,6 @@ class Evaluator:
     def __init__(self, metric_path, metric_args):
         if metric_path != "test":
             self.metric = load(metric_path)
-            os.environ["HF_ALLOW_CODE_EVAL"] = "1"
         self.metric_args = metric_args
         self.item_scores = []
     
@@ -112,7 +112,7 @@ class CodeEvalEvaluator(Evaluator):
 
     def item_calculate(self, data, record, output_lang):
         test_cases = [data['reference']]
-        candidates = [[data['formatted_output']]]
+        candidates = [data['formatted_output']]
         if not self.is_blank(candidates):
             pass_at_k, results = self.metric.compute(references=test_cases, predictions=candidates, k=[1])
             item_score = pass_at_k['pass@1']

@@ -53,6 +53,7 @@ class HFModel(Model):
             "top_p": 0.95,
             "temperature": 0.2,
             "return_full_text": False,
+            "num_return_sequences": 1,
         }
         model_args = model_args or {}
         if "max_new_tokens" in model_args:
@@ -119,14 +120,15 @@ class HFModel(Model):
         )
 
     
-    def generate(self, prompt: str) -> str:
+    def generate(self, prompt: str) -> list:
         # pipelineなしで実装----------------------------------
         # input_ids = self.tokenizer.encode(prompt, return_tensors="pt").to(self.device)
         # generated_ids = self.model.generate(input_ids, **self.model_args)
         # return self.tokenizer.decode(generated_ids[0], skip_special_tokens=True)
         # ----------------------------------
         generated_texts = self.generator(prompt, **self.model_args, pad_token_id=self.generator.tokenizer.eos_token_id)
-        return generated_texts[0]['generated_text']
+        generated_texts_list = [item['generated_text'] for item in generated_texts]
+        return generated_texts_list
 
 class HFModelLoader(ModelLoader):
     def __init__(self, model_name, hf_token=None, model_args=None, quantize=True):
@@ -159,7 +161,7 @@ class OpenAIModel(Model):
         self.model_name = model_name
         self.model_args = default_args
 
-    def generate(self, prompt: str) -> str:
+    def generate(self, prompt: str) -> list:
         client = OpenAI(api_key=self.openai_api_key)
         
         response = client.chat.completions.create(
@@ -168,7 +170,9 @@ class OpenAIModel(Model):
             **self.model_args
         )
         # prompt_and_response = prompt + "\n" + response.choices[0].message.content
-        return response.choices[0].message.content
+        # return response.choices[0].message.content
+        responses = [choice.message.content for choice in response.choices]
+        return responses
 
 class OpenAIModelLoader(ModelLoader):
     def __init__(self, openai_api_key, model_name, model_args=None):

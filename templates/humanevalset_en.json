@@ -1,0 +1,7 @@
+{
+    "template": "{prompt_en}",
+    "input_lang": "en",
+    "output_lang": "py", 
+    "format": "humaneval", 
+    "reference": "\n{test}\ncheck({entry_point})"
+}

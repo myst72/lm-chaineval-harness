@@ -58,7 +58,8 @@ def find_unprocessed_data(dataset, existing_results):
 def save_results(result_path, dataset, record, total_score=-1):
     """Save the evaluation results to a file."""
     mode = 'a' if total_score == -1 else 'w'
-
+    
+    # 結果を保存するディレクトリを確認し、存在しない場合は作成
     directory = os.path.dirname(result_path)
     if not os.path.exists(directory):
         os.makedirs(directory)
@@ -70,14 +71,24 @@ def save_results(result_path, dataset, record, total_score=-1):
                 if 'id' in k:
                     filtered_data['id'] = v
             filtered_data['model_input'] = data.get('model_input', '')
-            filtered_data['model_output'] = data.get('model_output', '')
-            filtered_data['output_format'] = data.get('output_format', '')
-            filtered_data['formatted_correctly'] = data.get('formatted_correctly', '')
-            filtered_data['formatted_output'] = data.get('formatted_output', '')
-            filtered_data['reference'] = data.get('reference', '')
-            filtered_data['item_score'] = data.get('item_score', '')
-            filtered_data['total_score'] = total_score
-            f.write(json.dumps(filtered_data, ensure_ascii=False) + '\n')
+            # filtered_data['model_output'] = data.get('model_output', '')
+            # filtered_data['output_format'] = data.get('output_format', '')
+            model_outputs = data.get('model_output', [])
+            formatted_outputs = data.get('formatted_output', [])
+            
+            for i, (model_output, formatted_output) in enumerate(zip(model_outputs, formatted_outputs)):
+                # 各要素を個別に処理
+                filtered_data['model_output'] = model_output
+                filtered_data['formatted_output'] = formatted_output
+                
+                # その他のデータを処理
+                filtered_data['output_format'] = data.get('output_format', '')
+                filtered_data['formatted_correctly'] = data.get('formatted_correctly', '')
+                filtered_data['reference'] = data.get('reference', '')
+                filtered_data['item_score'] = data.get('item_score', '')
+                filtered_data['total_score'] = total_score
+                # 結果をファイルに書き込み
+                f.write(json.dumps(filtered_data, ensure_ascii=False) + '\n')
 
 
 def main():
@@ -115,15 +126,15 @@ def main():
         data['model_input'] = prompt
         debug_print(args.debug_mode, "Input:\n", data['model_input'])
         data['model_output'] = model.generate(prompt)
-        debug_print(args.debug_mode, "Output:\n", data['model_output'])
-        output_lang, output_format, formatted_output = template.collate(prompt, data['model_output'])
+        debug_print(args.debug_mode, "Output_Sample:\n", data['model_output'][0])
+        output_lang, output_format, formatted_output_list = template.collate(prompt, data['model_output'])
         data['output_format'] = output_format
-        if isinstance(formatted_output, dict):
-            data['formatted_output'] = formatted_output["output"]
-            data['formatted_correctly'] = formatted_output["formatted_correctly"]
+        if isinstance(formatted_output_list, dict):
+            data['formatted_output'] = formatted_output_list["output"]
+            data['formatted_correctly'] = formatted_output_list["formatted_correctly"]
         else:
-            data['formatted_output'] = formatted_output
-        debug_print(args.debug_mode, "Formatted:\n", data['formatted_output'])
+            data['formatted_output'] = formatted_output_list
+        debug_print(args.debug_mode, "Formatted_Sample:\n", data['formatted_output'][0])
 
         if evaluator:
             if data['formatted_output'] is None:
