@@ -32,13 +32,29 @@ class ModelLoader:
 # Testing Code
 # =====================
 
-class TestModel:
-    def generate(self, prompt: str, model_args=None)->str:
-        return f"Generated response for: {prompt} \n with args: {model_args}"
+class TestModel(Model):
+    def __init__(self, model_name, model_args=None):
+        default_args = {"n": 1}
+        model_args = model_args or {}
+        default_args.update(model_args)
+
+        super().__init__()
+        self.model_args = default_args
+
+    def generate(self, prompt: str) -> list:
+        num_sequences = self.model_args.get('num_return_sequences') or self.model_args.get('n') or 1
+        test_results = [
+            f"Response #{i}: Generated response for: {prompt} \n with args: {self.model_args}"
+            for i in range(num_sequences)
+        ]
+        return test_results
 
 class TestModelLoader(ModelLoader):
-    def load(self)->Model:
-        return TestModel()
+    def __init__(self, model_name, model_args=None):
+        super().__init__(model_name, model_args)
+
+    def load(self) -> TestModel:
+        return TestModel(self.model_name, self.model_args)
 
 
 # =====================
