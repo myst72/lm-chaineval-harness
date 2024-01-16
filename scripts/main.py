@@ -2,6 +2,7 @@ import argparse
 import json
 import os
 from tqdm import tqdm
+from collections import defaultdict
 from models import load_model
 from dataloaders import load_testdata
 from templates import load_template
@@ -40,6 +41,19 @@ def load_existing_results(result_path):
             return [json.loads(line) for line in f]
     except FileNotFoundError:
         return []
+
+
+def group_and_aggregate_results(results):
+    grouped_results = defaultdict(lambda: defaultdict(list))
+    for result in results:
+        id_value = result.get('id')
+        if id_value:
+            for key, value in result.items():
+                if key in ['model_output', 'formatted_output']:
+                    grouped_results[id_value][key].append(value)
+                else:
+                    grouped_results[id_value][key] = value
+    return [dict(result) for result in grouped_results.values()]
 
 
 def find_id_value(data):
@@ -116,7 +130,8 @@ def main():
         'metrics': args.metric_path,
     } 
 
-    existing_results = load_existing_results(args.result_path)
+    loaded_results = load_existing_results(args.result_path)
+    existing_results = group_and_aggregate_results(loaded_results)
     unprocessed_data = find_unprocessed_data(dataset, existing_results)
 
     for data in tqdm(unprocessed_data):
@@ -146,9 +161,11 @@ def main():
         save_results(args.result_path, [data], record)
     
     if evaluator:
+        if 'output_lang' not in locals():
+            raise ValueError("output_lang is not defined. Cannot execute as all data has already been processed.")
+
         all_data = existing_results + unprocessed_data
         total_score = evaluator.total_calculate(all_data, record, output_lang)
-        print("total_score:\n", total_score)
         save_results(args.result_path, all_data, record, total_score)
 
 
