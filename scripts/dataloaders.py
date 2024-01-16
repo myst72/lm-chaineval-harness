@@ -19,12 +19,23 @@ class DataLoader(ABC):
 # =====================
 
 class TestDataLoader(DataLoader):
-    """A test data loader that returns a predefined list of dictionaries."""
+    """A test data loader that returns a predefined list of dictionaries based on the specified dataset number."""
+
+    def __init__(self, dataset_args: dict = None):
+        self.dataset_args = dataset_args if dataset_args is not None else {}
+        self.dataset_num = self.dataset_args.get('num', 2)  # Default number of test data is 2
+
     def load(self) -> list[dict]:
-        return [
-            {"task_id": "test_1", "prompt": "test_prompt_1", "canonical_solution": "test_solution_1", "test": "test_test_1", "entry_point": "test_entry_1"},
-            {"task_id": "test_2", "prompt": "test_prompt_2", "canonical_solution": "test_solution_2", "test": "test_test_2", "entry_point": "test_entry_2"}
-        ]
+        test_data = []
+        for i in range(1, self.dataset_num + 1):
+            test_data.append({
+                "task_id": f"test_{i}",
+                "prompt": f"test_prompt_{i}",
+                "canonical_solution": f"test_solution_{i}",
+                "test": f"test_test_{i}",
+                "entry_point": f"test_entry_{i}"
+            })
+        return test_data
 
 
 # =====================
@@ -83,7 +94,7 @@ class DataLoaderFactory:
     @staticmethod
     def create(dataset_path: str, dataset_args: dict = None) -> DataLoader:
         if dataset_path == "test":
-            return TestDataLoader()
+            return TestDataLoader(dataset_args)
         elif dataset_path.endswith(".jsonl"):
             return JSONDataLoader(dataset_path, dataset_args)
         else:
