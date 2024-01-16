@@ -81,35 +81,6 @@ class CodeEvalEvaluator(Evaluator):
             return True
         return False
 
-    # def calculate(self, dataset, record):
-    #     # code_evalメトリックをロード
-    #     code_eval_metric = load("code_eval")
-
-    #     os.environ["HF_ALLOW_CODE_EVAL"] = "1"
-
-    #     # データセット内の各データに対してcode_evalを実行
-    #     for data in dataset:
-    #         # テストケースと候補のコードを取得
-    #         test_cases = [data['reference']]
-    #         candidates = [[data['formatted_output']]]
-
-    #         if not self.is_blank(candidates):
-    #             pass_at_k, results = code_eval_metric.compute(references=test_cases, predictions=candidates, k=[1])
-    #             data['item_pass@1_score'] = pass_at_k['pass@1'] # k=1 のスコアをリストに追加
-    #         else:
-    #             data['item_pass@1_score'] = 0.0
-
-    #     # 各要素からitem_scoreを取り出して平均を算出
-    #     item_scores = [data['item_pass@1_score'] for data in dataset]
-    #     average_pass_at_k = sum(item_scores) / len(item_scores) if item_scores else 0
-
-    #     for data in dataset:
-    #         data['all_pass@1_score'] = average_pass_at_k
-
-    #     return average_pass_at_k, dataset
-
-
-
     def item_calculate(self, data, record, output_lang):
         test_cases = [data['reference']]
         candidates = [data['formatted_output']]
@@ -118,15 +89,22 @@ class CodeEvalEvaluator(Evaluator):
             item_score = pass_at_k['pass@1']
         else:
             item_score = 0.00
-        self.item_scores.append(item_score)
+        # self.item_scores.append(item_score)
         return item_score
     
-    def total_calculate(self, dataset, record, output_lang):
-        if self.item_scores:
-            total_score = sum(self.item_scores) / len(self.item_scores) 
+    def total_calculate(self, all_data, record, output_lang):
+        existing_scores = [data['item_score'] for data in all_data if 'item_score' in data]
+        if existing_scores:
+            total_score = sum(existing_scores) / len(existing_scores)
         else:
             total_score = 0.00
         return total_score
+    # def total_calculate(self, dataset, record, output_lang):
+    #     if self.item_scores:
+    #         total_score = sum(self.item_scores) / len(self.item_scores) 
+    #     else:
+    #         total_score = 0.00
+    #     return total_score
 
 
 class AccuracyEvaluator(Evaluator):
