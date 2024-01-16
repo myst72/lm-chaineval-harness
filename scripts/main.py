@@ -1,8 +1,7 @@
-import argparse
 import json
-import os
+import argparse
 from tqdm import tqdm
-from collections import defaultdict
+from results_handling import load_existing_results, group_and_aggregate_results, find_id_value, find_unprocessed_data, save_results
 from models import load_model
 from dataloaders import load_testdata
 from templates import load_template
@@ -32,77 +31,6 @@ def debug_print(debug_mode, *messages):
     """Print debug messages if debug mode is enabled."""
     if debug_mode:
         print("🐥", *messages)
-
-
-def load_existing_results(result_path):
-    """Load existing results from the file."""
-    try:
-        with open(result_path, 'r', encoding='utf-8') as f:
-            return [json.loads(line) for line in f]
-    except FileNotFoundError:
-        return []
-
-
-def group_and_aggregate_results(results):
-    grouped_results = defaultdict(lambda: defaultdict(list))
-    for result in results:
-        id_value = result.get('id')
-        if id_value:
-            for key, value in result.items():
-                if key in ['model_output', 'formatted_output']:
-                    grouped_results[id_value][key].append(value)
-                else:
-                    grouped_results[id_value][key] = value
-    return [dict(result) for result in grouped_results.values()]
-
-
-def find_id_value(data):
-    for key in data.keys():
-        if 'id' in key:
-            return data[key]
-    return None
-
-
-def find_unprocessed_data(dataset, existing_results):
-    """Find data in the dataset that has not been processed yet."""
-    processed_ids = {find_id_value(result) for result in existing_results}
-    return [data for data in dataset if find_id_value(data) not in processed_ids]
-
-
-def save_results(result_path, dataset, record, total_score=-1):
-    """Save the evaluation results to a file."""
-    mode = 'a' if total_score == -1 else 'w'
-    
-    # 結果を保存するディレクトリを確認し、存在しない場合は作成
-    directory = os.path.dirname(result_path)
-    if not os.path.exists(directory):
-        os.makedirs(directory)
-
-    with open(result_path, mode, encoding='utf-8') as f:
-        for data in dataset:
-            filtered_data = record.copy()
-            for k, v in data.items():
-                if 'id' in k:
-                    filtered_data['id'] = v
-            filtered_data['model_input'] = data.get('model_input', '')
-            # filtered_data['model_output'] = data.get('model_output', '')
-            # filtered_data['output_format'] = data.get('output_format', '')
-            model_outputs = data.get('model_output', [])
-            formatted_outputs = data.get('formatted_output', [])
-            
-            for i, (model_output, formatted_output) in enumerate(zip(model_outputs, formatted_outputs)):
-                # 各要素を個別に処理
-                filtered_data['model_output'] = model_output
-                filtered_data['formatted_output'] = formatted_output
-                
-                # その他のデータを処理
-                filtered_data['output_format'] = data.get('output_format', '')
-                filtered_data['formatted_correctly'] = data.get('formatted_correctly', '')
-                filtered_data['reference'] = data.get('reference', '')
-                filtered_data['item_score'] = data.get('item_score', '')
-                filtered_data['total_score'] = total_score
-                # 結果をファイルに書き込み
-                f.write(json.dumps(filtered_data, ensure_ascii=False) + '\n')
 
 
 def main():
@@ -144,6 +72,7 @@ def main():
         debug_print(args.debug_mode, "Output_Sample:\n", data['model_output'][0])
         output_lang, output_format, formatted_output_list = template.collate(prompt, data['model_output'])
         data['output_format'] = output_format
+
         if isinstance(formatted_output_list, dict):
             data['formatted_output'] = formatted_output_list["output"]
             data['formatted_correctly'] = formatted_output_list["formatted_correctly"]
