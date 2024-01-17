@@ -47,3 +47,15 @@ python3 ./scripts/main.py \
     --metric_path code_eval \
     --result_path results/gpt-3.5-turbo_jhumaneval.jsonl \
     --debug_mode
+
+# test5: JPythonCodeQA2023
+python3 ./scripts/main.py \
+    --model_path gpt-3.5-turbo \
+    --openai_api_key $OPENAI_API_KEY \
+    --model_args '{"max_tokens": 1}' \
+    --dataset_path ./datasets/JPythonCodeQA2023.jsonl \
+    --dataset_args '{"num":10}' \
+    --template_path ./templates/jpythoncodeqa2023.json \
+    --metric_path  exact_match \
+    --result_path results/gpt-3.5_JPythonCodeQA2023.jsonl \
+    --debug_mode
