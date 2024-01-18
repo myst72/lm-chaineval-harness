@@ -96,7 +96,7 @@ def main():
         all_data = existing_results + unprocessed_data
         total_score = evaluator.total_calculate(all_data, record, output_lang)
         save_results(args.result_path, all_data, record, total_score)
-        debug_print(args.debug_mode, "Total_Score:\n", total_score)
+        print(args.debug_mode, "Total_Score:\n", total_score)
 
 
 if __name__ == '__main__':
