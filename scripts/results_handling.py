@@ -55,16 +55,17 @@ def save_results(result_path, dataset, record, total_score=-1):
             filtered_data['model_input'] = data.get('model_input', '')
             model_outputs = data.get('model_output', [])
             formatted_outputs = data.get('formatted_output', [])
+            format_checked = data.get('format_checked', [])
             
-            for i, (model_output, formatted_output) in enumerate(zip(model_outputs, formatted_outputs)):
+            for i, (model_output, formatted_output, format_check) in enumerate(zip(model_outputs, formatted_outputs, format_checked)):
                 filtered_data['model_output'] = model_output
                 filtered_data['formatted_output'] = formatted_output
-                
+
+                filtered_data['format_checked'] = format_check if format_checked else ''
+
                 filtered_data['output_format'] = data.get('output_format', '')
-                filtered_data['formatted_correctly'] = data.get('formatted_correctly', '')
                 filtered_data['reference'] = data.get('reference', '')
                 filtered_data['item_score'] = data.get('item_score', '')
                 filtered_data['total_score'] = total_score
-                
-                f.write(json.dumps(filtered_data, ensure_ascii=False) + '\n')
 
+                f.write(json.dumps(filtered_data, ensure_ascii=False) + '\n')
