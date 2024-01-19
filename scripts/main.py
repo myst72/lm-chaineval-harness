@@ -55,14 +55,14 @@ def main():
         debug_print(debug_mode, "Input:\n", data['model_input'])
         data['model_output'] = model.generate(prompt)
         debug_print(debug_mode, "Output_Sample:\n", data['model_output'][0])
-        output_lang, output_format, formatted_output_list = template.collate(prompt, data['model_output'])
+        output_lang, output_format, formatted_output_list, format_checked_list = template.collate(prompt, data['model_output'])
         data['output_format'] = output_format
 
-        if isinstance(formatted_output_list, dict):
-            data['formatted_output'] = formatted_output_list["output"]
-            data['formatted_correctly'] = formatted_output_list["formatted_correctly"]
-        else:
-            data['formatted_output'] = formatted_output_list
+        if format_checked_list:
+            data['format_checked'] = format_checked_list
+            print("Format checked:\n", data['format_checked'])
+        
+        data['formatted_output'] = formatted_output_list
         debug_print(debug_mode, "Formatted_Sample:\n", data['formatted_output'][0])
 
         if evaluator:
