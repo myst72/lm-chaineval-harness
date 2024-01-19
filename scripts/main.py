@@ -21,7 +21,6 @@ def debug_print(debug_mode, *messages):
 
 def main():
     args = parse_args_and_config()
-    print(args)
 
     debug_mode = args.debug_mode
     quantize = args.quantize_model
@@ -60,7 +59,6 @@ def main():
 
         if format_checked_list:
             data['format_checked'] = format_checked_list
-            print("Format checked:\n", data['format_checked'])
         
         data['formatted_output'] = formatted_output_list
         debug_print(debug_mode, "Formatted_Sample:\n", data['formatted_output'][0])
