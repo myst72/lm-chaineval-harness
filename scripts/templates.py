@@ -42,9 +42,23 @@ class TemplateProcessor:
         """Collates the model output based on the language and format specified in the template data."""
         output_lang = self.template_data.get('output_lang', '')
         output_format = self.template_data.get('format', 'default')
+        begin_marker = self.template_data.get('begin_marker', None)
+        end_marker = self.template_data.get('end_marker', None)
+        
         formatted_output_list = []
+        format_checked_list = []
 
         for model_output in model_output_list:
+            
+            if begin_marker and end_marker:
+                start_index = model_output.find(begin_marker)
+                end_index = model_output.find(end_marker)
+                if start_index != -1 and end_index != -1 and end_index > start_index:
+                    model_output = model_output[start_index + len(begin_marker):end_index]
+                    format_checked_list.append(1)
+                else:
+                    format_checked_list.append(0)
+
             if output_format == 'default':
                 if output_lang in ['NL', 'en', 'ja', 'ko']:
                     formatted_output = self.format_natural_language(prompt, model_output)# 自然言語の整形処理
@@ -78,7 +92,7 @@ class TemplateProcessor:
             
             formatted_output_list.append(formatted_output)
 
-        return output_lang, output_format, formatted_output_list
+        return output_lang, output_format, formatted_output_list, format_checked_list
     
 
     # collate-subfunction
