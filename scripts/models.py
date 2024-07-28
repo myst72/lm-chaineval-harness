@@ -66,8 +66,8 @@ class HFModel(Model):
         default_args = {
             "max_length": 512,
             "do_sample": True,
-            "top_p": 0.95,
-            "temperature": 0.2,
+            # "top_p": 0.95,
+            # "temperature": 0.2,
             "return_full_text": False,
             "num_return_sequences": 1,
         }
