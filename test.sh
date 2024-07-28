@@ -45,4 +45,26 @@ python3 ./scripts/main.py \
     --result_path results/chico_mihe-ja.jsonl \
     --debug_mode
 
+# test3: MIHE-EN-CoT
+python3 ./scripts/main.py \
+    --model_path kkuramitsu/tinycodellama-jp-0.13b-50k \
+    --model_args '{"max_new_tokens": 512, "do_sample": false, "num_beams": 1}' \
+    --dataset_path kogi-jwu/multilingual_instruction_humaneval \
+    --dataset_args '{"split": "test", "subset":"en"}' \
+    --template_path ./templates/MIHE-EN-CoT.json \
+    --metric_path code_eval \
+    --result_path results/chico_mihe-en-cot.jsonl \
+    --debug_mode
+
+# test4: MIHE-JA-CoT
+python3 ./scripts/main.py \
+    --model_path kkuramitsu/tinycodellama-jp-0.13b-50k \
+    --model_args '{"max_new_tokens": 512, "do_sample": false, "num_beams": 1}' \
+    --dataset_path kogi-jwu/multilingual_instruction_humaneval \
+    --dataset_args '{"split": "test", "subset":"ja"}' \
+    --template_path ./templates/MIHE-JA-CoT.json \
+    --metric_path code_eval \
+    --result_path results/chico_mihe-ja-cot.jsonl \
+    --debug_mode
+
 
